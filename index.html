@@ -820,6 +820,11 @@ async function readPdfPages(file) {
 $('pdf').addEventListener('change', async ev => {
   const f = ev.target.files && ev.target.files[0];
   if (!f) return;
+  await importPdf(f);
+  ev.target.value = '';
+});
+
+async function importPdf(f) {
   say('impMsg', 'Leggo il PDF…');
   IMP = null; renderImp();
   try {
@@ -845,8 +850,7 @@ $('pdf').addEventListener('change', async ev => {
   } catch (e) {
     say('impMsg', 'Errore: ' + e.message, 'err');
   }
-  ev.target.value = '';
-});
+}
 
 function optionList(map, cur) { return Object.keys(map).map(k => '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + esc(typeof map[k] === 'string' ? map[k] : map[k].nome) + '</option>').join(''); }
 function impSubtitle(s) {
@@ -1034,6 +1038,22 @@ $('btnWipe').addEventListener('click', async () => {
 
 for (const k of ['cal', 'imp', 'dat']) $('nav-' + k).addEventListener('click', () => setTab(k));
 
+/* ---------- PDF ricevuto da "Condividi" ---------- */
+async function takeSharedPdf() {
+  if (!/[?&]shared=1/.test(location.search)) return;
+  history.replaceState(null, '', location.pathname);
+  setTab('imp');
+  try {
+    const c = await caches.open('turni-share');
+    const r = await c.match('shared-pdf');
+    if (!r) { say('impMsg', 'Non ho ricevuto nessun file: prova a condividere di nuovo il PDF.', 'warn'); return; }
+    const blob = await r.blob();
+    await c.delete('shared-pdf');
+    const name = decodeURIComponent(r.headers.get('X-File-Name') || 'turni.pdf');
+    await importPdf(new File([blob], name, { type: 'application/pdf' }));
+  } catch (e) { say('impMsg', 'Errore: ' + e.message, 'err'); }
+}
+
 /* ---------- avvio ---------- */
 (async function init() {
   try { await openDb(); } catch (e) { $('fatal').hidden = false; ['tab-cal', 'tab-imp', 'tab-dat'].forEach(i => { $(i).hidden = true; }); return; }
@@ -1044,6 +1064,7 @@ for (const k of ['cal', 'imp', 'dat']) $('nav-' + k).addEventListener('click', (
   S.lastBackup = await metaGet('lastBackup', null);
   const t = new Date(); S.month = { y: t.getFullYear(), m: t.getMonth() };
   setTab('cal');
+  await takeSharedPdf();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
 })();
 </script>
