@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1f24">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Turni Cinema</title>
+<style>
+  :root { --bg:#f3f4f7; --card:#fff; --ink:#16191d; --mut:#687180; --line:#e1e4ea; --acc:#2f5bea; --ok:#1b8a4b; --warn:#a96200; --err:#c0392b; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; }
+  body { font:16px/1.4 system-ui, -apple-system, Roboto, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); padding-bottom:calc(70px + env(safe-area-inset-bottom)); }
+  body.noscroll { overflow:hidden; }
+  button { font:inherit; border:0; border-radius:12px; padding:12px 16px; background:var(--acc); color:#fff; width:100%; margin-top:10px; cursor:pointer; }
+  button.ghost { background:#eef0f4; color:var(--ink); }
+  button.danger { color:var(--err); }
+  button:disabled { opacity:.5; }
+  h2 { margin:0 0 10px; font-size:18px; }
+  h3 { margin:0 0 8px; font-size:18px; }
+  .wrap { max-width:640px; margin:0 auto; padding:12px; }
+  .card { background:var(--card); border-radius:14px; padding:14px; margin:12px 0; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .mut { color:var(--mut); font-size:14px; }
+  .msg { margin-top:8px; font-size:14px; } .msg.ok { color:var(--ok); } .msg.warn { color:var(--warn); } .msg.err { color:var(--err); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  label.f { display:flex; flex-direction:column; font-size:13px; color:var(--mut); gap:3px; }
+  select, input[type=time], input[type=number], input[type=text], input[type=date], input[type=url], textarea { font:inherit; padding:9px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); width:100%; }
+  textarea { min-height:70px; }
+
+  /* calendario */
+  .top { display:flex; align-items:center; gap:8px; }
+  .top h1 { flex:1; text-align:center; font-size:19px; margin:0; }
+  .top button { width:46px; margin:0; padding:10px 0; background:#e8ebf1; color:var(--ink); font-size:20px; }
+  .top button.today { width:auto; padding:10px 12px; font-size:14px; }
+  .wd { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:12px; color:var(--mut); margin-top:12px; }
+  #grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-top:4px; }
+  .day { margin:0; padding:3px 2px; min-height:62px; background:var(--card); color:var(--ink); border-radius:8px; text-align:left; display:flex; flex-direction:column; gap:2px; align-items:stretch; box-shadow:0 1px 1px rgba(0,0,0,.05); overflow:hidden; }
+  .day.empty { background:transparent; box-shadow:none; pointer-events:none; }
+  .day.today { outline:2px solid var(--acc); }
+  .day .n { font-size:12px; font-weight:600; padding-left:2px; }
+  .chip { font-size:10px; line-height:1.2; color:#fff; border-radius:4px; padding:2px 3px; white-space:nowrap; overflow:hidden; text-overflow:clip; }
+  .chip.rest { background:#c9ced8; color:#4a5160; }
+  .more { font-size:10px; color:var(--mut); padding-left:2px; }
+  .legend { display:flex; gap:12px; flex-wrap:wrap; font-size:13px; color:var(--mut); margin-top:10px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+  .stat b { display:block; font-size:20px; } .stat span { font-size:13px; color:var(--mut); }
+  .banner { background:#fff4dc; border-radius:12px; padding:10px 12px; margin-top:12px; font-size:14px; }
+  .banner button { margin-top:8px; padding:9px; }
+
+  /* nav */
+  nav { position:fixed; left:0; right:0; bottom:0; display:flex; background:#fff; border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:5; }
+  nav button { margin:0; border-radius:0; background:transparent; color:var(--mut); padding:10px 4px 8px; font-size:12px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  nav button svg { width:24px; height:24px; }
+  nav button.on { color:var(--acc); font-weight:600; }
+
+  /* sheet */
+  #sheet { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10; display:flex; align-items:flex-end; justify-content:center; }
+  #sheet[hidden] { display:none; }
+  #sheetBody { background:#fff; width:100%; max-width:640px; max-height:88vh; overflow:auto; border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .sh { border:1px solid var(--line); border-left:5px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
+  .sh.rest { border-left-color:#c9ced8; color:var(--mut); }
+  .sh .big { font-size:20px; font-weight:600; margin-top:2px; }
+  .sh .shows { font-size:13px; color:var(--mut); margin-top:4px; }
+  .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .btns button { margin-top:8px; padding:9px; }
+
+  /* importa */
+  .ic { border:1px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
+  .ic.off { opacity:.55; }
+  .row { display:flex; gap:8px; align-items:center; } .row input[type=checkbox] { width:22px; height:22px; }
+  .sub { color:var(--mut); font-size:14px; margin:2px 0 8px 30px; }
+  .shows { font-size:14px; margin-top:8px; }
+  .need { margin-top:8px; padding:8px; background:#fff6e5; border-radius:8px; font-size:14px; }
+  .restline { color:var(--mut); font-size:14px; padding:3px 2px; }
+  pre { white-space:pre-wrap; word-break:break-word; font-size:12px; background:#f0f2f5; padding:8px; border-radius:8px; max-height:260px; overflow:auto; }
+  #toast { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(84px + env(safe-area-inset-bottom)); background:#1c1f24; color:#fff; padding:10px 16px; border-radius:20px; font-size:14px; z-index:20; max-width:90%; text-align:center; }
+  #toast[hidden] { display:none; }
+</style>
+</head>
+<body>
+
+<div id="fatal" class="wrap" hidden>
+  <div class="card"><h2>Archivio non disponibile</h2>
+  <p>Questo browser non permette di salvare i dati (succede in modalità in incognito). Apri l'app in una scheda normale di Chrome.</p></div>
+</div>
+
+<!-- ===== CALENDARIO ===== -->
+<section id="tab-cal" class="wrap">
+  <div class="top">
+    <button id="prev" aria-label="Mese precedente">‹</button>
+    <h1 id="calTitle"></h1>
+    <button id="next" aria-label="Mese successivo">›</button>
+    <button id="today" class="today">Oggi</button>
+  </div>
+  <div id="banner" class="banner" hidden>
+    Hai modifiche non salvate in una copia di sicurezza.
+    <button id="bannerBtn">Salva copia</button>
+  </div>
+  <div class="wd"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
+  <div id="grid"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:#e0a100"></i>Astra</span>
+    <span><i class="dot" style="background:#12a086"></i>Centrale</span>
+    <span><i class="dot" style="background:#4a66e8"></i>Moderno</span>
+    <span><i class="dot" style="background:#c9ced8"></i>Riposo</span>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h2 id="statTitle">Riepilogo</h2>
+    <div class="stats" id="stats"></div>
+    <div class="mut" id="statNote" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- ===== IMPORTA ===== -->
+<section id="tab-imp" class="wrap" hidden>
+  <div class="card">
+    <h2>Importa il PDF dei turni</h2>
+    <input type="file" id="pdf" accept="application/pdf,.pdf" style="width:100%">
+    <div id="impMsg" class="msg"></div>
+  </div>
+  <div id="impBody"></div>
+</section>
+
+<!-- ===== DATI ===== -->
+<section id="tab-dat" class="wrap" hidden>
+  <div class="card">
+    <h2>Copia di sicurezza</h2>
+    <div class="mut" id="bkInfo"></div>
+    <button id="btnBackup">Salva copia</button>
+    <button id="btnRestore" class="ghost">Ripristina da un file</button>
+    <input type="file" id="restoreFile" accept=".json,application/json,text/plain" hidden>
+    <div id="bkMsg" class="msg"></div>
+  </div>
+  <div class="card">
+    <h2>Impostazioni</h2>
+    <div class="grid2">
+      <label class="f">Minuti prima del primo spettacolo<input type="number" id="setAp" inputmode="numeric" min="0" max="240"></label>
+      <label class="f">Minuti dopo l'ultimo spettacolo<input type="number" id="setCh" inputmode="numeric" min="0" max="240"></label>
+    </div>
+    <label class="f" style="margin-top:10px">Indirizzo del ponte per leggere il sito (facoltativo)<input type="url" id="setBridge" placeholder="https://script.google.com/macros/s/…/exec"></label>
+    <label class="f" style="margin-top:10px">Chiave del ponte (se l'hai impostata)<input type="text" id="setKey" autocomplete="off"></label>
+    <button id="btnSettings">Salva impostazioni</button>
+    <div id="setMsg" class="msg"></div>
+  </div>
+  <div class="card">
+    <h2>Stato</h2>
+    <div class="mut" id="stState"></div>
+    <details style="margin-top:8px"><summary class="mut">Diagnostica</summary><pre id="debug">(niente ancora)</pre></details>
+    <button id="btnWipe" class="ghost danger">Cancella tutti i dati</button>
+  </div>
+</section>
+
+<nav>
+  <button id="nav-cal" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendario</button>
+  <button id="nav-imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0l-4-4m4 4l4-4M4 19h16"/></svg>Importa</button>
+  <button id="nav-dat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>Dati</button>
+</nav>
+
+<div id="sheet" hidden><div id="sheetBody"></div></div>
+<div id="toast" hidden></div>
+
+<script type="module">
+/* ===== Utilità condivise ===== */
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function titleKey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+
+/* ===== Lettore del PDF dei turni (funzioni pure, nessuna dipendenza) ===== */
+
+function normTxt(s) {
+  return String(s == null ? '' : s)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+var WEEKDAYS = { LUNEDI: 1, MARTEDI: 2, MERCOLEDI: 3, GIOVEDI: 4, VENERDI: 5, SABATO: 6, DOMENICA: 0 };
+var CINEMA_KEYS = ['ASTRA', 'CENTRALE', 'MODERNO'];
+var ROW_KEYS = { 'ORARIO': 'orario', 'ATTIVITA': 'attivita', 'ORARIO 2': 'orario2', 'PAUSA': 'pausa' };
+
+function cleanCell(items) {
+  items.sort(function (a, b) { return a.x - b.x; });
+  var t = normTxt(items.map(function (i) { return i.raw; }).join(' '));
+  return t.replace(/\s*-\s*/g, '-');
+}
+
+function nearestIndex(list, cx) {
+  var best = -1, bd = 1e9;
+  for (var i = 0; i < list.length; i++) {
+    var d = Math.abs(list[i].cx - cx);
+    if (d < bd) { bd = d; best = i; }
+  }
+  return { idx: best, dist: bd };
+}
+
+/*
+ * items: [{str, x, x1, y}]  (y verso il basso, x1 = bordo destro)
+ * ritorna { name, days:[{dayNum, weekday, cells:{ASTRA:{orario,attivita,orario2,pausa},...}}], warnings }
+ */
+function parseSchedule(rawItems) {
+  var items = [];
+  rawItems.forEach(function (i) {
+    var raw = String(i.str == null ? '' : i.str).trim();
+    var s = normTxt(raw);
+    if (!s) return;
+    var x1 = (i.x1 != null) ? i.x1 : i.x;
+    items.push({ s: s, raw: raw, x: i.x, x1: x1, cx: (i.x + x1) / 2, y: i.y });
+  });
+
+  var warnings = [];
+  var giorno = items.filter(function (i) { return i.s === 'GIORNO'; }).sort(function (a, b) { return a.y - b.y; });
+  if (!giorno.length) throw new Error('Non trovo la tabella dei turni (manca la parola GIORNO).');
+  var noteArr = items.filter(function (i) { return i.s === 'NOTE'; }).sort(function (a, b) { return a.y - b.y; });
+  var noteY = noteArr.length ? noteArr[noteArr.length - 1].y : null;
+
+  var days = [];
+  var name = null;
+
+  giorno.forEach(function (g, gi) {
+    var top = g.y - 8;
+    var bottom = (gi + 1 < giorno.length) ? giorno[gi + 1].y - 8 : (noteY != null ? noteY - 8 : 1e9);
+    var sec = items.filter(function (i) { return i.y >= top && i.y < bottom; });
+
+    var nums = sec.filter(function (i) { return Math.abs(i.y - g.y) <= 4 && /^\d{1,2}$/.test(i.s) && i.x > g.x1; })
+      .sort(function (a, b) { return a.cx - b.cx; });
+    var wds = sec.filter(function (i) { return WEEKDAYS.hasOwnProperty(i.s); });
+    var heads = sec.filter(function (i) { return CINEMA_KEYS.indexOf(i.s) >= 0; });
+    if (!nums.length || !heads.length) {
+      warnings.push('Blocco ' + (gi + 1) + ': non trovo giorni o cinema, saltato.');
+      return;
+    }
+    var headY = Math.min.apply(null, heads.map(function (h) { return h.y; }));
+    heads = heads.filter(function (h) { return Math.abs(h.y - headY) <= 4; })
+      .sort(function (a, b) { return a.cx - b.cx; });
+    var minHeadCx = heads[0].cx;
+    var firstHeadX = Math.min.apply(null, heads.map(function (h) { return h.x; }));
+
+    // etichette di riga a sinistra (ORARIO, ATTIVITA, ORARIO 2, PAUSA) + nome persona
+    var left = sec.filter(function (i) { return i.y > headY + 3 && i.x1 < firstHeadX - 5; })
+      .sort(function (a, b) { return a.y - b.y; });
+    var clusters = [];
+    left.forEach(function (it) {
+      var c = clusters[clusters.length - 1];
+      if (c && Math.abs(it.y - c.y) <= 3.5) c.items.push(it); else clusters.push({ y: it.y, items: [it] });
+    });
+    var rows = [];
+    clusters.forEach(function (c) {
+      c.items.sort(function (a, b) { return a.x - b.x; });
+      var t = c.items.map(function (i) { return i.s; }).join(' ').replace(/\s+/g, ' ');
+      if (ROW_KEYS[t]) rows.push({ key: ROW_KEYS[t], y: c.y });
+      else if (!name && /^[A-Z' .\-]{2,30}$/.test(t)) name = c.items.map(function (i) { return i.raw; }).join(' ');
+    });
+    if (!rows.length) {
+      warnings.push('Blocco ' + (gi + 1) + ': non trovo le righe ORARIO/ATTIVITA, saltato.');
+      return;
+    }
+
+    // griglia delle celle: colonna (cinema) x riga
+    var grid = heads.map(function () { return {}; });
+    sec.forEach(function (it) {
+      if (it.y <= headY + 3) return;
+      if (it.cx < minHeadCx - 30) return;
+      var col = nearestIndex(heads, it.cx);
+      if (col.idx < 0 || col.dist > 40) return;
+      var row = null, rd = 1e9;
+      rows.forEach(function (r) { var d = Math.abs(r.y - it.y); if (d < rd) { rd = d; row = r.key; } });
+      if (!row || rd > 6) return;
+      (grid[col.idx][row] = grid[col.idx][row] || []).push(it);
+    });
+
+    // un oggetto-giorno per ogni numero
+    var secDays = nums.map(function (n) {
+      var wi = nearestIndex(wds, n.cx);
+      var wd = (wi.idx >= 0 && wi.dist <= 40) ? WEEKDAYS[wds[wi.idx].s] : null;
+      return { dayNum: parseInt(n.s, 10), weekday: wd, cx: n.cx, cells: {} };
+    });
+    heads.forEach(function (h, idx) {
+      var di = nearestIndex(secDays, h.cx);
+      var cell = {};
+      Object.keys(ROW_KEYS).forEach(function (k) {
+        var key = ROW_KEYS[k];
+        cell[key] = grid[idx][key] ? cleanCell(grid[idx][key]) : '';
+      });
+      if (di.idx >= 0) secDays[di.idx].cells[h.s] = cell;
+    });
+    secDays.forEach(function (d) { delete d.cx; days.push(d); });
+  });
+
+  if (!days.length) throw new Error('Nessun giorno letto dal PDF.');
+  return { name: name, days: days, warnings: warnings };
+}
+
+/* Il PDF riporta solo il numero del giorno: ricavo mese e anno dal giorno della settimana. */
+function fmtDate(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); } // m = 0..11
+
+/* today: {y, m (0..11), d} */
+function resolveDates(days, today) {
+  var warnings = [];
+  var todayMs = Date.UTC(today.y, today.m, today.d);
+  var first = days[0];
+  var best = null;
+  for (var off = -3; off <= 4; off++) {
+    var dt = new Date(Date.UTC(today.y, today.m + off, first.dayNum));
+    if (dt.getUTCDate() !== first.dayNum) continue;
+    if (first.weekday != null && dt.getUTCDay() !== first.weekday) continue;
+    var dist = Math.abs(dt.getTime() - todayMs);
+    if (!best || dist < best.dist) best = { y: dt.getUTCFullYear(), m: dt.getUTCMonth(), dist: dist };
+  }
+  if (!best) {
+    warnings.push('Non riesco a ricavare il mese dal giorno della settimana: uso il mese corrente.');
+    best = { y: today.y, m: today.m };
+  }
+  var y = best.y, m = best.m, prev = first.dayNum;
+  var out = [];
+  days.forEach(function (d, i) {
+    if (i > 0 && d.dayNum < prev) { m++; if (m > 11) { m = 0; y++; } }
+    prev = d.dayNum;
+    var dt = new Date(Date.UTC(y, m, d.dayNum));
+    if (d.weekday != null && dt.getUTCDay() !== d.weekday) {
+      warnings.push('Il giorno ' + d.dayNum + ' non coincide con il giorno della settimana letto: controlla le date.');
+    }
+    out.push(fmtDate(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()));
+  });
+  return { dates: out, warnings: warnings };
+}
+
+/* Traduce una cella del PDF in un turno. */
+function interpretCell(cell) {
+  var o = cell.orario || '', a = cell.attivita || '', o2 = cell.orario2 || '', p = cell.pausa || '';
+  if (!o && !a && !o2 && !p) return null;
+  if (a === 'RIPOSO' || o === 'RIPOSO') return { rest: true };
+  var mode = 'MANUAL';
+  if (o === 'AP-CH') mode = 'APCH';
+  else if (o === 'AP') mode = 'AP';
+  else if (o === 'CH') mode = 'CH';
+  var pausa = (p.match(/\d+/) || [''])[0];
+  return { rest: false, mode: mode, role: a, extra: o2, pausa: pausa, orario: o };
+}
+
+/* Elenco dei turni a partire dal PDF letto. */
+function buildShifts(parsed, dates) {
+  var shifts = [];
+  parsed.days.forEach(function (d, i) {
+    CINEMA_KEYS.forEach(function (c) {
+      var cell = d.cells[c];
+      if (!cell) return;
+      var it = interpretCell(cell);
+      if (!it) return;
+      shifts.push({
+        date: dates[i], dayNum: d.dayNum, weekday: d.weekday, cinema: c,
+        rest: it.rest, mode: it.mode, role: it.role, extra: it.extra, pausa: it.pausa, orario: it.orario,
+        rawCell: cell
+      });
+    });
+  });
+  return shifts;
+}
+
+
+
+/* ===== Calcolo degli orari del turno (funzioni pure) ===== */
+
+function hmToMin(hm) {
+  var m = /^(\d{1,2}):(\d{2})$/.exec(String(hm || '').trim());
+  if (!m) return null;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+function minToHm(min) {
+  var m = ((Math.round(min) % 1440) + 1440) % 1440;
+  return pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
+}
+
+/*
+ * films: [{title, times:['15:40',...], duration|null}]
+ * durations: { titleKey: minuti }   (valori salvati / inseriti a mano)
+ * offs: {ap: 45, ch: 15}
+ * ritorna { start: 'HH:MM'|null, end: 'HH:MM'|null, missingTitle: string|null, firstShow, lastShow }
+ */
+function computeShift(mode, films, durations, offs) {
+  var shows = [];
+  (films || []).forEach(function (f) {
+    var dur = (durations && durations[titleKey(f.title)]) || f.duration || null;
+    (f.times || []).forEach(function (t) {
+      var s = hmToMin(t);
+      if (s != null) shows.push({ title: f.title, start: s, dur: dur });
+    });
+  });
+  if (!shows.length) return { start: null, end: null, missingTitle: null, firstShow: null, lastShow: null, noShows: true };
+  shows.sort(function (a, b) { return a.start - b.start; });
+  var first = shows[0], last = shows[shows.length - 1];
+  var res = { start: null, end: null, missingTitle: null, firstShow: minToHm(first.start), lastShow: minToHm(last.start) };
+
+  if (mode === 'APCH' || mode === 'AP') res.start = minToHm(first.start - offs.ap);
+
+  if (mode === 'APCH' || mode === 'CH') {
+    if (!last.dur) {
+      res.missingTitle = last.title;
+    } else {
+      var maxEnd = 0;
+      shows.forEach(function (s) { if (s.dur) maxEnd = Math.max(maxEnd, s.start + s.dur); });
+      res.end = minToHm(maxEnd + offs.ch);
+    }
+  }
+  return res;
+}
+
+
+
+/* ===== Lettura degli spettacoli dalla pagina del sito (funzioni pure) ===== */
+
+var HEAD_MARK = '\u0001';
+
+var NAMED_ENT = {
+  nbsp: ' ', amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', egrave: 'è', eacute: 'é', agrave: 'à', ograve: 'ò',
+  ugrave: 'ù', igrave: 'ì', rsquo: "'", lsquo: "'", ldquo: '"', rdquo: '"', ndash: '-', mdash: '-', hellip: '...',
+  Egrave: 'È', Eacute: 'É', Agrave: 'À'
+};
+
+function decodeEntities(s) {
+  return s
+    .replace(/&#x([0-9a-f]+);/gi, function (_, h) { return String.fromCharCode(parseInt(h, 16)); })
+    .replace(/&#(\d+);/g, function (_, d) { return String.fromCharCode(parseInt(d, 10)); })
+    .replace(/&([a-zA-Z]+);/g, function (m, n) { return NAMED_ENT.hasOwnProperty(n) ? NAMED_ENT[n] : m; });
+}
+
+/* HTML -> righe di testo. Tag di blocco, link e bottoni vanno a capo; gli altri tag diventano uno spazio. */
+function htmlToLines(html) {
+  var t = String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+  t = t.replace(/<h[1-6]\b[^>]*>/gi, '\n\u0001');
+  t = t.replace(/<\/?(br|p|div|li|ul|ol|h[1-6]|tr|td|th|table|option|select|section|article|header|footer|nav|a|button|form|label)\b[^>]*>/gi, '\n');
+  t = t.replace(/<[^>]+>/g, ' ');
+  t = decodeEntities(t);
+  return t.split(/\n+/).map(function (l) {
+    var head = l.charAt(0) === '\u0001';
+    l = l.replace(/\u0001/g, '').replace(/\s+/g, ' ').trim();
+    return (head && l) ? HEAD_MARK + l : l;
+  }).filter(function (l) { return l; });
+}
+
+var TIME_G = /(^|[^\d:])([01]?\d|2[0-3]):([0-5]\d)(?![\d:])/g;
+
+function extractTimes(line) {
+  var out = [], m;
+  TIME_G.lastIndex = 0;
+  while ((m = TIME_G.exec(line)) !== null) {
+    out.push(pad2(parseInt(m[2], 10)) + ':' + m[3]);
+    TIME_G.lastIndex = m.index + m[0].length - 1;
+  }
+  return out;
+}
+
+function isTimeLine(line) {
+  if (/\d:\d{2}\s*[-–—]\s*\d/.test(line)) return false; // intervalli tipo 10:00-22:00 = orari di apertura
+  var times = extractTimes(line);
+  if (!times.length) return false;
+  var rest = line.replace(/([01]?\d|2[0-3]):[0-5]\d/g, '').replace(/[\s,;|·•\-–—\/]|\bore\b|\bh\b/gi, '');
+  return rest.length <= 2;
+}
+
+var SKIP_TITLE = /^(acquista|prenota|biglietti?|orari|tutti gli orari|oggi|domani|luned|marted|mercoled|gioved|venerd|sabato|domenica|cinema|moderno|astra|centrale|estate|scegli|seleziona|film|data|sala|trailer|info|scheda|dettagli|scopri|leggi|vai|al momento|programmazione|home|menu|cerca|chiudi|lingua|v\.?o\.?|o\.?v\.?)\b/i;
+
+var GENRE_ONLY = /^(genere\W*)?((animazione|commedia|drammatico|thriller|horror|azione|avventura|fantascienza|fantasy|documentario|biografico|storico|romantico|musicale|western|giallo|noir|guerra|famiglia|sentimentale|comico|poliziesco|grottesco|sportivo|spionaggio|crime|per ragazzi)(\W+|$))+$/i;
+
+function looksLikeTitle(line) {
+  if (line.length < 2 || line.length > 100) return false;
+  if (/^\d+([ .\-\/]\d+)*$/.test(line)) return false;
+  if (SKIP_TITLE.test(line)) return false;
+  if (/^\d{1,2}\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)/i.test(line)) return false;
+  if (/durata/i.test(line) || /(\d{2,3})\s*(min\b|minuti|')/i.test(line)) return false;
+  if (GENRE_ONLY.test(line)) return false;
+  if (/^(di|regia|con|genere|durata)\b/i.test(line)) return false;
+  return true;
+}
+
+function findDuration(lines, from, to) {
+  for (var i = Math.max(0, from); i <= Math.min(lines.length - 1, to); i++) {
+    var m = /durata\D{0,6}(\d{2,3})/i.exec(lines[i]) || /(\d{2,3})\s*(?:min\b|minuti|'|’)/i.exec(lines[i]);
+    if (m) {
+      var v = parseInt(m[1], 10);
+      if (v >= 30 && v <= 300) return v;
+    }
+  }
+  return null;
+}
+
+/* ritorna [{title, times:[], duration|null}] */
+function parseFilms(lines) {
+  var films = [];
+  var i = 0;
+  while (i < lines.length) {
+    if (!isTimeLine(lines[i])) { i++; continue; }
+    var start = i, times = [];
+    while (i < lines.length && isTimeLine(lines[i])) {
+      extractTimes(lines[i]).forEach(function (t) { times.push(t); });
+      i++;
+    }
+    var end = i - 1;
+    // titolo = prima riga "sensata" risalendo dal blocco di orari
+    var tIdx = -1, k;
+    for (k = start - 1; k >= Math.max(0, start - 8); k--) {
+      if (lines[k].charAt(0) === HEAD_MARK && looksLikeTitle(lines[k].slice(1))) { tIdx = k; break; }
+    }
+    if (tIdx < 0) {
+      for (k = start - 1; k >= Math.max(0, start - 8); k--) {
+        if (lines[k].charAt(0) !== HEAD_MARK && looksLikeTitle(lines[k])) { tIdx = k; break; }
+      }
+    }
+    if (tIdx < 0) continue;
+    var title = lines[tIdx].replace(HEAD_MARK, '');
+    var dur = findDuration(lines, tIdx, end + 3);
+    var existing = null;
+    for (var f = 0; f < films.length; f++) if (titleKey(films[f].title) === titleKey(title)) existing = films[f];
+    if (existing) {
+      times.forEach(function (t) { if (existing.times.indexOf(t) < 0) existing.times.push(t); });
+      if (!existing.duration && dur) existing.duration = dur;
+    } else {
+      films.push({ title: title, times: times.filter(function (t, ix) { return times.indexOf(t) === ix; }), duration: dur });
+    }
+  }
+  return films;
+}
+
+function parseShowtimesHtml(html) {
+  var lines = htmlToLines(html);
+  return { films: parseFilms(lines), lines: lines.map(function (l) { return l.replace(HEAD_MARK, ''); }) };
+}
+
+
+
+/* ===================== Gestionale ===================== */
+
+const CINEMA = {
+  ASTRA:    { nome: 'Astra',    col: '#e0a100', letter: 'A', param: 'astra' },
+  CENTRALE: { nome: 'Centrale', col: '#12a086', letter: 'C', param: 'centrale' },
+  MODERNO:  { nome: 'Moderno',  col: '#4a66e8', letter: 'M', param: 'moderno' }
+};
+const MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+const MESI_B = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+const GG = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+const GG_L = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+const MODE_LABEL = { APCH: 'Apertura–Chiusura', AP: 'Solo apertura', CH: 'Solo chiusura', MANUAL: 'Orario a mano' };
+
+const S = {
+  shifts: [],
+  settings: { apMin: 45, chMin: 15, bridgeUrl: '', bridgeKey: '', durations: {} },
+  month: null, tab: 'cal', lastChange: null, lastBackup: null
+};
+let IMP = null;
+let lastSample = '', lastParseDebug = '';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cap = s => { s = String(s || '').trim().toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); };
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+const say = (id, text, cls) => { const el = $(id); el.textContent = text || ''; el.className = 'msg' + (cls ? ' ' + cls : ''); };
+let toastTimer = null;
+function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2600); }
+
+function todayIso() { const n = new Date(); return fmtDate(n.getFullYear(), n.getMonth(), n.getDate()); }
+function dateObj(iso) { const p = iso.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
+function dateShort(iso) { const d = dateObj(iso); return GG[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MESI_B[d.getUTCMonth()]; }
+function dateLong(iso) { const d = dateObj(iso); return GG_L[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MESI[d.getUTCMonth()].toLowerCase() + ' ' + d.getUTCFullYear(); }
+function durMin(s) {
+  if (!s.start || !s.end) return null;
+  const a = hmToMin(s.start); let b = hmToMin(s.end);
+  if (a == null || b == null) return null;
+  if (b <= a) b += 1440;
+  return b - a;
+}
+function fmtDur(min) { const h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + pad2(m) + ' min' : ''); }
+function byStart(a, b) { return (a.start || '99:99').localeCompare(b.start || '99:99'); }
+
+/* ---------- archivio sul telefono (IndexedDB) ---------- */
+let db = null;
+const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+function openDb() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('IndexedDB non disponibile'));
+    const r = indexedDB.open('turni-cinema', 1);
+    r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('shifts', { keyPath: 'id' }); d.createObjectStore('meta', { keyPath: 'k' }); };
+    r.onsuccess = () => { db = r.result; res(); };
+    r.onerror = () => rej(r.error);
+  });
+}
+const dbAll = () => reqP(db.transaction('shifts').objectStore('shifts').getAll());
+function dbWrite(puts, dels, clear) {
+  return new Promise((res, rej) => {
+    const t = db.transaction('shifts', 'readwrite'); const s = t.objectStore('shifts');
+    if (clear) s.clear();
+    (dels || []).forEach(id => s.delete(id));
+    (puts || []).forEach(x => s.put(x));
+    t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+}
+async function metaGet(k, def) { const r = await reqP(db.transaction('meta').objectStore('meta').get(k)); return r ? r.v : def; }
+function metaSet(k, v) { return reqP(db.transaction('meta', 'readwrite').objectStore('meta').put({ k: k, v: v })); }
+
+async function commit(puts, dels, clear) {
+  await dbWrite(puts, dels, clear);
+  if (clear) S.shifts = [];
+  const delSet = new Set(dels || []);
+  S.shifts = S.shifts.filter(x => !delSet.has(x.id));
+  (puts || []).forEach(p => { const i = S.shifts.findIndex(x => x.id === p.id); if (i >= 0) S.shifts[i] = p; else S.shifts.push(p); });
+  S.lastChange = new Date().toISOString();
+  await metaSet('lastChange', S.lastChange);
+  if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
+}
+const isDirty = () => S.shifts.length > 0 && S.lastChange && (!S.lastBackup || S.lastChange > S.lastBackup);
+
+/* ---------- navigazione ---------- */
+function setTab(t) {
+  S.tab = t;
+  ['cal', 'imp', 'dat'].forEach(k => { $('tab-' + k).hidden = k !== t; $('nav-' + k).classList.toggle('on', k === t); });
+  if (t === 'cal') renderCal();
+  if (t === 'dat') renderData();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- calendario ---------- */
+function monthStats(y, m) {
+  const pre = y + '-' + pad2(m + 1) + '-';
+  const work = new Set(), rest = new Set();
+  let min = 0, pause = 0, missing = 0;
+  S.shifts.forEach(s => {
+    if (!s.date.startsWith(pre)) return;
+    if (s.rest) { rest.add(s.date); return; }
+    work.add(s.date);
+    const d = durMin(s);
+    if (d == null) missing++; else { min += d; pause += parseInt(s.pausa, 10) || 0; }
+  });
+  return { work: work.size, rest: rest.size, min: min, pause: pause, missing: missing };
+}
+
+function renderCal() {
+  const y = S.month.y, m = S.month.m;
+  $('calTitle').textContent = MESI[m] + ' ' + y;
+  const lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
+  const dim = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const by = {};
+  S.shifts.forEach(s => { (by[s.date] = by[s.date] || []).push(s); });
+  const tIso = todayIso();
+  let h = '';
+  for (let i = 0; i < lead; i++) h += '<div class="day empty"></div>';
+  for (let d = 1; d <= dim; d++) {
+    const di = fmtDate(y, m, d);
+    const list = (by[di] || []).slice().sort(byStart);
+    let chips = '';
+    list.slice(0, 2).forEach(s => {
+      if (s.rest) chips += '<span class="chip rest">Riposo</span>';
+      else chips += '<span class="chip" style="background:' + CINEMA[s.cinema].col + '">' + CINEMA[s.cinema].letter + (s.start ? ' ' + esc(s.start) : ' ?') + '</span>';
+    });
+    if (list.length > 2) chips += '<span class="more">+' + (list.length - 2) + '</span>';
+    h += '<button class="day' + (di === tIso ? ' today' : '') + '" data-date="' + di + '"><span class="n">' + d + '</span>' + chips + '</button>';
+  }
+  $('grid').innerHTML = h;
+  $('banner').hidden = !isDirty();
+
+  const st = monthStats(y, m);
+  $('statTitle').textContent = 'Riepilogo di ' + MESI[m].toLowerCase();
+  $('stats').innerHTML =
+    '<div class="stat"><b>' + st.work + '</b><span>giorni di lavoro</span></div>' +
+    '<div class="stat"><b>' + st.rest + '</b><span>giorni di riposo</span></div>' +
+    '<div class="stat"><b>' + (st.min ? fmtDur(st.min) : '0 h') + '</b><span>ore di turno</span></div>' +
+    '<div class="stat"><b>' + (st.pause ? fmtDur(st.pause) : '0 h') + '</b><span>di cui pause</span></div>';
+  $('statNote').textContent = 'Le ore sono quelle da inizio a fine turno, pause comprese.' +
+    (st.missing ? ' ' + st.missing + (st.missing === 1 ? ' turno senza orario non è' : ' turni senza orario non sono') + ' conteggiati.' : '');
+}
+
+$('prev').addEventListener('click', () => { S.month.m--; if (S.month.m < 0) { S.month.m = 11; S.month.y--; } renderCal(); });
+$('next').addEventListener('click', () => { S.month.m++; if (S.month.m > 11) { S.month.m = 0; S.month.y++; } renderCal(); });
+$('today').addEventListener('click', () => { const t = new Date(); S.month = { y: t.getFullYear(), m: t.getMonth() }; renderCal(); });
+$('grid').addEventListener('click', e => { const b = e.target.closest('.day[data-date]'); if (b) openDay(b.dataset.date); });
+$('bannerBtn').addEventListener('click', () => saveCopy());
+
+/* ---------- finestra in basso ---------- */
+function openSheet(html) { $('sheetBody').innerHTML = html; $('sheet').hidden = false; document.body.classList.add('noscroll'); }
+function closeSheet() { $('sheet').hidden = true; document.body.classList.remove('noscroll'); if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(false); } }
+$('sheet').addEventListener('click', e => { if (e.target === $('sheet')) closeSheet(); });
+
+let confirmResolve = null;
+function askConfirm(text, okLabel, choices) {
+  return new Promise(res => {
+    confirmResolve = res;
+    let h = '<h3>' + esc(text) + '</h3>';
+    (choices || [{ id: 'yes', label: okLabel || 'Conferma' }]).forEach(c => { h += '<button data-act="confirm" data-choice="' + c.id + '"' + (c.ghost ? ' class="ghost"' : '') + '>' + esc(c.label) + '</button>'; });
+    h += '<button class="ghost" data-act="close">Annulla</button>';
+    openSheet(h);
+  });
+}
+
+function openDay(di) {
+  const list = S.shifts.filter(s => s.date === di).sort(byStart);
+  let h = '<h3>' + esc(dateLong(di)) + '</h3>';
+  if (!list.length) h += '<p class="mut">Nessun turno salvato per questo giorno.</p>';
+  list.forEach(s => {
+    if (s.rest) {
+      h += '<div class="sh rest"><b>Riposo</b><div class="btns"><span></span><button class="ghost danger" data-act="del" data-id="' + s.id + '">Elimina</button></div></div>';
+      return;
+    }
+    const d = durMin(s);
+    h += '<div class="sh" style="border-left-color:' + CINEMA[s.cinema].col + '"><b>' + CINEMA[s.cinema].nome + (s.role ? ' · ' + esc(s.role) : '') + '</b>' +
+      '<div class="big">' + (s.start && s.end ? esc(s.start) + ' – ' + esc(s.end) : 'Orario da inserire') + '</div>' +
+      (d != null ? '<div class="mut">' + fmtDur(d) + '</div>' : '') +
+      (s.pausa ? '<div class="mut">Pausa ' + esc(s.pausa) + ' min</div>' : '') +
+      (s.extra ? '<div class="mut">' + esc(s.extra) + '</div>' : '') +
+      (s.note ? '<div>' + esc(s.note) + '</div>' : '') +
+      (s.shows ? '<div class="shows">Spettacoli: ' + esc(s.shows) + '</div>' : '') +
+      '<div class="btns"><button class="ghost" data-act="edit" data-id="' + s.id + '">Modifica</button><button class="ghost danger" data-act="del" data-id="' + s.id + '">Elimina</button></div></div>';
+  });
+  h += '<button data-act="add" data-date="' + di + '">+ Aggiungi turno</button><button class="ghost" data-act="close">Chiudi</button>';
+  openSheet(h);
+}
+
+function openEdit(id, di) {
+  const s = id ? S.shifts.find(x => x.id === id) : { date: di, cinema: 'MODERNO', role: '', start: '', end: '', pausa: '', note: '', extra: '', shows: '', rest: false };
+  const opt = (v, l, cur) => '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + esc(l) + '</option>';
+  openSheet('<h3>' + (id ? 'Modifica turno' : 'Nuovo turno') + '</h3>' +
+    '<div class="grid2">' +
+    '<label class="f">Data<input type="date" id="ed_date" value="' + esc(s.date) + '"></label>' +
+    '<label class="f">Tipo<select id="ed_rest">' + opt('0', 'Turno', s.rest ? '1' : '0') + opt('1', 'Riposo', s.rest ? '1' : '0') + '</select></label>' +
+    '<label class="f">Cinema<select id="ed_cinema">' + Object.keys(CINEMA).map(k => opt(k, CINEMA[k].nome, s.cinema)).join('') + '</select></label>' +
+    '<label class="f">Ruolo<input type="text" id="ed_role" list="roles" value="' + esc(s.role) + '"><datalist id="roles"><option value="Sala"><option value="Cassa"><option value="Bar"><option value="Chiusura"><option value="Controllo"></datalist></label>' +
+    '<label class="f">Inizio<input type="time" id="ed_start" value="' + esc(s.start) + '"></label>' +
+    '<label class="f">Fine<input type="time" id="ed_end" value="' + esc(s.end) + '"></label>' +
+    '<label class="f">Pausa (minuti)<input type="number" id="ed_pausa" inputmode="numeric" min="0" max="240" value="' + esc(s.pausa) + '"></label>' +
+    '</div>' +
+    '<label class="f" style="margin-top:8px">Note<textarea id="ed_note">' + esc(s.note || '') + '</textarea></label>' +
+    '<button data-act="save-edit" data-id="' + (id || '') + '">Salva</button><button class="ghost" data-act="close">Annulla</button>');
+}
+
+$('sheetBody').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'close') { closeSheet(); return; }
+  if (act === 'confirm') { const r = confirmResolve; confirmResolve = null; $('sheet').hidden = true; document.body.classList.remove('noscroll'); if (r) r(b.dataset.choice || true); return; }
+  if (act === 'add') { openEdit(null, b.dataset.date); return; }
+  if (act === 'edit') { openEdit(b.dataset.id); return; }
+  if (act === 'del') {
+    const s = S.shifts.find(x => x.id === b.dataset.id);
+    const ok = await askConfirm('Eliminare questo ' + (s && s.rest ? 'riposo' : 'turno') + '?', 'Elimina');
+    if (ok) { await commit([], [b.dataset.id]); renderCal(); toast('Eliminato'); }
+    return;
+  }
+  if (act === 'save-edit') {
+    const rest = $('ed_rest').value === '1';
+    const date = $('ed_date').value;
+    const start = $('ed_start').value, end = $('ed_end').value;
+    if (!date) { toast('Scegli la data'); return; }
+    if (!rest && ((start && !end) || (!start && end))) { toast('Inserisci sia inizio sia fine, oppure nessuno dei due'); return; }
+    const old = b.dataset.id ? S.shifts.find(x => x.id === b.dataset.id) : null;
+    const rec = Object.assign({}, old || { shows: '', extra: '', source: 'manual' }, {
+      id: old ? old.id : uid(), date: date, rest: rest, cinema: $('ed_cinema').value,
+      role: rest ? '' : cap($('ed_role').value), start: rest ? '' : start, end: rest ? '' : end,
+      pausa: rest ? '' : String($('ed_pausa').value || '').trim(), note: $('ed_note').value.trim()
+    });
+    await commit([rec], []);
+    const p = date.split('-'); S.month = { y: +p[0], m: +p[1] - 1 };
+    $('sheet').hidden = true; document.body.classList.remove('noscroll');
+    renderCal(); toast('Salvato');
+  }
+});
+
+/* ---------- lettura del sito (direttamente o tramite il ponte) ---------- */
+async function fetchShowtimes(cinema, date) {
+  const ymd = date.replace(/-/g, '');
+  const br = (S.settings.bridgeUrl || '').trim();
+  if (br) {
+    const u = new URL(br);
+    u.searchParams.set('cinema', cinema); u.searchParams.set('date', ymd);
+    if (S.settings.bridgeKey) u.searchParams.set('key', S.settings.bridgeKey);
+    const r = await fetch(u.toString());
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'Il ponte ha risposto con un errore');
+    return j;
+  }
+  const url = 'https://www.luccacinema.it/cinema/?cinema_selected=' + CINEMA[cinema].param + '&date_selected=' + ymd + '&type_view=per_day';
+  let html;
+  try { const r = await fetch(url); html = await r.text(); }
+  catch (e) { throw new Error('Il browser non può leggere il sito da solo: imposta il ponte in Dati > Impostazioni, oppure inserisci gli orari a mano.'); }
+  const p = parseShowtimesHtml(html);
+  return { ok: true, films: p.films, sample: p.lines.slice(0, 250).join('\n') };
+}
+
+/* ---------- importazione del PDF ---------- */
+let pdfjsP = null;
+function loadPdfjs() {
+  if (!pdfjsP) {
+    pdfjsP = import('./pdf.mjs').then(m => {
+      m.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.mjs', document.baseURI).href;
+      return m;
+    });
+  }
+  return pdfjsP;
+}
+async function readPdfPages(file) {
+  const lib = await loadPdfjs();
+  const buf = await file.arrayBuffer();
+  const pdf = await lib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const pages = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const vp = page.getViewport({ scale: 1 });
+    const tc = await page.getTextContent();
+    const items = [];
+    tc.items.forEach(i => {
+      if (!i.str || !String(i.str).trim()) return;
+      const x = i.transform[4], w = i.width || 0, h = i.height || 0;
+      items.push({ str: i.str, x: x, x1: x + w, y: vp.height - i.transform[5] - h / 2 });
+    });
+    pages.push(items);
+  }
+  return pages;
+}
+
+$('pdf').addEventListener('change', async ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  say('impMsg', 'Leggo il PDF…');
+  IMP = null; renderImp();
+  try {
+    const pages = await readPdfPages(f);
+    let days = [], name = null, found = 0; const warnings = [];
+    pages.forEach((items, idx) => {
+      try {
+        const r = parseSchedule(items); found++;
+        if (!name) name = r.name;
+        r.days.forEach(d => days.push(d));
+        r.warnings.forEach(w => warnings.push(w));
+      } catch (e) { warnings.push('Pagina ' + (idx + 1) + ': ' + e.message); }
+    });
+    if (!found) throw new Error('Non riconosco la tabella dei turni in questo PDF.');
+    const n = new Date();
+    const rd = resolveDates(days, { y: n.getFullYear(), m: n.getMonth(), d: n.getDate() });
+    rd.warnings.forEach(w => warnings.push(w));
+    const shifts = buildShifts({ days: days }, rd.dates).map((s, i) => Object.assign(s, { id: i, include: !s.rest, start: '', end: '', site: null, calc: null }));
+    lastParseDebug = JSON.stringify({ nome: name, avvisi: warnings, giorni: days }, null, 1);
+    IMP = { name: name, warnings: warnings, shifts: shifts };
+    say('impMsg', 'PDF letto: ' + days.length + ' giorni' + (name ? ' (turni di ' + name + ')' : '') + '.' + (warnings.length ? ' Attenzione: ' + warnings.join(' ') : ''), warnings.length ? 'warn' : 'ok');
+    renderImp();
+  } catch (e) {
+    say('impMsg', 'Errore: ' + e.message, 'err');
+  }
+  ev.target.value = '';
+});
+
+function optionList(map, cur) { return Object.keys(map).map(k => '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + esc(typeof map[k] === 'string' ? map[k] : map[k].nome) + '</option>').join(''); }
+function impSubtitle(s) {
+  const bits = [];
+  if (s.role) bits.push(cap(s.role));
+  if (s.pausa) bits.push('pausa ' + s.pausa + ' min');
+  if (s.extra) bits.push(s.extra);
+  if (s.mode === 'MANUAL') bits.push('nel PDF: ' + [s.rawCell.orario, s.rawCell.attivita, s.rawCell.orario2].filter(Boolean).join(' / '));
+  if (s.date < todayIso()) bits.push('già passato');
+  return bits.join(' · ');
+}
+
+function renderImp() {
+  const box = $('impBody');
+  if (!IMP) { box.innerHTML = ''; return; }
+  let h = '<div class="card"><h2>Turni letti</h2>';
+  IMP.shifts.forEach(s => {
+    if (s.rest) { h += '<div class="restline">' + esc(dateShort(s.date)) + ' · Riposo</div>'; return; }
+    let shows = '';
+    if (s.site && s.site.ok === false) shows = '<div class="shows msg err">' + esc(s.site.error) + '</div>';
+    else if (s.site) {
+      shows = s.site.films.length
+        ? '<div class="shows">' + s.site.films.map(f => { const d = S.settings.durations[titleKey(f.title)] || f.duration; return '<b>' + esc(f.title) + '</b>' + (d ? ' (' + d + ' min)' : '') + ': ' + esc(f.times.join(' · ')); }).join('<br>') + '</div>'
+        : '<div class="shows msg warn">Nessuno spettacolo trovato sul sito per questo giorno: inserisci tu inizio e fine.</div>';
+    }
+    const need = (s.calc && s.calc.missingTitle)
+      ? '<div class="need">Quanto dura «' + esc(s.calc.missingTitle) + '»? (minuti) <input type="number" inputmode="numeric" min="30" max="300" data-i="' + s.id + '" data-f="dur" placeholder="es. 110"></div>' : '';
+    const endNext = s.start && s.end && hmToMin(s.end) <= hmToMin(s.start) ? ' (giorno dopo)' : '';
+    h += '<div class="ic' + (s.include ? '' : ' off') + '">' +
+      '<label class="row"><input type="checkbox" data-i="' + s.id + '" data-f="include"' + (s.include ? ' checked' : '') + '><b>' + esc(dateShort(s.date)) + ' · ' + esc(CINEMA[s.cinema].nome) + '</b></label>' +
+      '<div class="sub">' + esc(impSubtitle(s)) + '</div>' +
+      '<div class="grid2">' +
+      '<label class="f">Cinema<select data-i="' + s.id + '" data-f="cinema">' + optionList(CINEMA, s.cinema) + '</select></label>' +
+      '<label class="f">Tipo di turno<select data-i="' + s.id + '" data-f="mode">' + optionList(MODE_LABEL, s.mode) + '</select></label>' +
+      '<label class="f">Inizio<input type="time" data-i="' + s.id + '" data-f="start" value="' + esc(s.start) + '"></label>' +
+      '<label class="f">Fine' + endNext + '<input type="time" data-i="' + s.id + '" data-f="end" value="' + esc(s.end) + '"></label>' +
+      '</div>' + shows + need + '</div>';
+  });
+  h += '<button id="btnCalc">Leggi gli orari dal sito e calcola</button><div id="calcMsg" class="msg"></div>';
+  h += '<button id="btnSaveImp" class="ghost">Salva nel gestionale</button></div>';
+  box.innerHTML = h;
+}
+
+function applyCompute(s) {
+  if (!s.site || s.site.ok === false || s.rest || s.mode === 'MANUAL') return;
+  const r = computeShift(s.mode, s.site.films, S.settings.durations, { ap: S.settings.apMin, ch: S.settings.chMin });
+  s.calc = r;
+  if (r.noShows) return;
+  if (r.start != null) s.start = r.start;
+  if (s.mode === 'APCH' || s.mode === 'CH') s.end = r.end != null ? r.end : '';
+}
+
+$('impBody').addEventListener('change', async ev => {
+  const t = ev.target, i = t.getAttribute('data-i'), f = t.getAttribute('data-f');
+  if (i == null || !f || !IMP) return;
+  const s = IMP.shifts[+i];
+  if (f === 'include') { s.include = t.checked; renderImp(); return; }
+  if (f === 'cinema' || f === 'mode') { s[f] = t.value; s.site = null; s.calc = null; renderImp(); return; }
+  if (f === 'start' || f === 'end') { s[f] = t.value; renderImp(); return; }
+  if (f === 'dur') {
+    const v = parseInt(t.value, 10);
+    if (!(v >= 30 && v <= 300) || !s.calc) return;
+    S.settings.durations[titleKey(s.calc.missingTitle)] = v;
+    await metaSet('settings', S.settings);
+    IMP.shifts.forEach(applyCompute);
+    renderImp();
+  }
+});
+
+$('impBody').addEventListener('click', async ev => {
+  if (ev.target.id === 'btnCalc') {
+    const btn = ev.target; btn.disabled = true;
+    try {
+      const todo = IMP.shifts.filter(s => !s.rest && s.include && s.mode !== 'MANUAL');
+      if (!todo.length) { say('calcMsg', 'Nessun turno da calcolare.', 'warn'); return; }
+      const cache = {};
+      for (let n = 0; n < todo.length; n++) {
+        const s = todo[n];
+        say('calcMsg', 'Leggo il sito… (' + (n + 1) + '/' + todo.length + ')');
+        const key = s.cinema + '|' + s.date;
+        if (!cache[key]) {
+          try { cache[key] = await fetchShowtimes(s.cinema, s.date); }
+          catch (e) { cache[key] = { ok: false, error: e.message }; }
+        }
+        s.site = cache[key];
+        if (s.site.sample) lastSample = s.site.sample;
+        applyCompute(s);
+      }
+      renderImp();
+      say('calcMsg', 'Fatto. Controlla gli orari e, se serve, correggili a mano.', 'ok');
+    } catch (e) { say('calcMsg', 'Errore: ' + e.message, 'err'); }
+    finally { btn.disabled = false; }
+  }
+  if (ev.target.id === 'btnSaveImp') {
+    const dates = Array.from(new Set(IMP.shifts.map(s => s.date)));
+    const dels = S.shifts.filter(x => x.source === 'pdf' && dates.indexOf(x.date) >= 0).map(x => x.id);
+    const add = [];
+    IMP.shifts.forEach(s => {
+      if (s.rest) { add.push({ id: uid(), date: s.date, cinema: s.cinema, rest: true, source: 'pdf' }); return; }
+      if (!s.include) return;
+      if ((s.start && !s.end) || (!s.start && s.end)) return;
+      add.push({
+        id: uid(), date: s.date, cinema: s.cinema, rest: false, role: cap(s.role), start: s.start || '', end: s.end || '',
+        pausa: s.pausa || '', extra: s.extra || '', note: s.mode === 'MANUAL' ? 'Dal piano: ' + [s.rawCell.orario, s.rawCell.attivita, s.rawCell.orario2].filter(Boolean).join(' / ') : '',
+        shows: s.site && s.site.ok !== false && s.site.films.length ? s.site.films.map(f => f.title + ' ' + f.times.join(' ')).join(' | ') : '',
+        source: 'pdf'
+      });
+    });
+    const skipped = IMP.shifts.filter(s => !s.rest && s.include && ((s.start && !s.end) || (!s.start && s.end))).length;
+    await commit(add, dels);
+    const p = dates.sort()[0].split('-'); S.month = { y: +p[0], m: +p[1] - 1 };
+    IMP = null; renderImp(); say('impMsg', '');
+    setTab('cal');
+    toast('Salvati ' + add.length + ' elementi' + (skipped ? ' (' + skipped + ' saltati: manca inizio o fine)' : ''));
+  }
+});
+
+/* ---------- copia di sicurezza ---------- */
+function backupData() {
+  return { app: 'turni-cinema', version: 1, exportedAt: new Date().toISOString(), settings: S.settings, shifts: S.shifts };
+}
+async function markBackup() { S.lastBackup = new Date().toISOString(); await metaSet('lastBackup', S.lastBackup); renderCal(); renderData(); }
+
+async function saveCopy() {
+  const json = JSON.stringify(backupData(), null, 1);
+  const name = 'turni-backup-' + todayIso() + '.json';
+  const shareFile = new File([json], name, { type: 'text/plain' });
+  if (navigator.canShare && navigator.canShare({ files: [shareFile] })) {
+    try { await navigator.share({ files: [shareFile], title: 'Copia dei turni' }); await markBackup(); toast('Copia salvata'); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  await markBackup(); toast('Copia scaricata nei Download');
+}
+
+$('btnBackup').addEventListener('click', () => saveCopy());
+$('btnRestore').addEventListener('click', () => $('restoreFile').click());
+$('restoreFile').addEventListener('change', async ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!data || data.app !== 'turni-cinema' || !Array.isArray(data.shifts)) throw new Error('Questo file non è una copia dei turni.');
+    const choice = await askConfirm('Nel file ci sono ' + data.shifts.length + ' elementi. Cosa faccio?', null, [
+      { id: 'merge', label: 'Unisci a quelli che ho già' }, { id: 'replace', label: 'Sostituisci tutto', ghost: true }]);
+    if (!choice) return;
+    const rows = data.shifts.filter(x => x && x.id && x.date).map(x => Object.assign({}, x));
+    if (choice === 'replace') await commit(rows, [], true); else await commit(rows, []);
+    if (data.settings && typeof data.settings === 'object') {
+      S.settings = Object.assign({}, S.settings, data.settings, { durations: Object.assign({}, S.settings.durations, data.settings.durations || {}) });
+      await metaSet('settings', S.settings);
+    }
+    S.lastBackup = S.lastChange; await metaSet('lastBackup', S.lastBackup);
+    renderCal(); renderData();
+    say('bkMsg', 'Ripristinati ' + rows.length + ' elementi.', 'ok');
+  } catch (e) { say('bkMsg', 'Errore: ' + e.message, 'err'); }
+  ev.target.value = '';
+});
+
+/* ---------- dati e impostazioni ---------- */
+async function renderData() {
+  const lb = S.lastBackup ? new Date(S.lastBackup).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }) : 'mai';
+  $('bkInfo').textContent = 'Ultima copia: ' + lb + '. Salva la copia dove vuoi: Drive, WhatsApp, email o file.';
+  $('setAp').value = S.settings.apMin; $('setCh').value = S.settings.chMin;
+  $('setBridge').value = S.settings.bridgeUrl || ''; $('setKey').value = S.settings.bridgeKey || '';
+  let pers = 'non verificato';
+  try { if (navigator.storage && navigator.storage.persisted) pers = (await navigator.storage.persisted()) ? 'sì' : 'no (Chrome può liberare lo spazio se il telefono è pieno)'; } catch (e) {}
+  $('stState').textContent = 'Elementi salvati su questo telefono: ' + S.shifts.length + '. Archivio protetto: ' + pers + '.';
+  $('debug').textContent = (lastParseDebug || '(nessun PDF letto in questa sessione)') + (lastSample ? '\n\n--- ultimo testo letto dal sito ---\n' + lastSample : '');
+}
+$('btnSettings').addEventListener('click', async () => {
+  S.settings.apMin = Math.max(0, parseInt($('setAp').value, 10) || 0);
+  S.settings.chMin = Math.max(0, parseInt($('setCh').value, 10) || 0);
+  S.settings.bridgeUrl = $('setBridge').value.trim();
+  S.settings.bridgeKey = $('setKey').value.trim();
+  await metaSet('settings', S.settings);
+  say('setMsg', 'Impostazioni salvate.', 'ok');
+});
+$('btnWipe').addEventListener('click', async () => {
+  const ok = await askConfirm('Cancellare tutti i turni da questo telefono? Se non hai una copia, non si recuperano.', 'Cancella tutto');
+  if (ok) { await commit([], [], true); renderCal(); renderData(); toast('Dati cancellati'); }
+});
+
+for (const k of ['cal', 'imp', 'dat']) $('nav-' + k).addEventListener('click', () => setTab(k));
+
+/* ---------- avvio ---------- */
+(async function init() {
+  try { await openDb(); } catch (e) { $('fatal').hidden = false; ['tab-cal', 'tab-imp', 'tab-dat'].forEach(i => { $(i).hidden = true; }); return; }
+  S.shifts = await dbAll();
+  const st = await metaGet('settings', null);
+  if (st) S.settings = Object.assign(S.settings, st, { durations: Object.assign({}, st.durations || {}) });
+  S.lastChange = await metaGet('lastChange', null);
+  S.lastBackup = await metaGet('lastBackup', null);
+  const t = new Date(); S.month = { y: t.getFullYear(), m: t.getMonth() };
+  setTab('cal');
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
