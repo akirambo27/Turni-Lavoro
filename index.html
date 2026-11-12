@@ -21,6 +21,16 @@
   h2 { margin:0 0 10px; font-size:18px; }
   h3 { margin:0 0 8px; font-size:18px; }
   .wrap { max-width:640px; margin:0 auto; padding:12px; }
+  .dock { position:fixed; left:0; right:0; z-index:6; background:rgba(238,242,255,.93); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-top:3px solid #2f5be7; box-shadow:0 -8px 20px rgba(20,30,60,.22); padding:10px 14px 12px; }
+  .dock[hidden] { display:none; }
+  .dock.live { background:rgba(255,241,241,.93); border-top-color:#f0262c; }
+  .dock .dk-t { font-size:15px; font-weight:600; } .dock .dk-s { font-size:13px; color:var(--mut); }
+  .dock .dk-live { color:#1a7f4b; }
+  .hold { position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; width:100%; height:52px; margin:8px 0 0; font-size:16px; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:none; }
+  .hold.out { background:#f0262c; }
+  .hold .hfill { position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(255,255,255,.35); pointer-events:none; }
+  .hold .lbl { position:relative; pointer-events:none; }
+  .badge-done { margin:6px 0; color:#1a7f4b; font-weight:600; font-size:14px; }
   .card { background:var(--card); border-radius:14px; padding:14px; margin:12px 0; box-shadow:0 1px 2px rgba(0,0,0,.06); }
   .mut { color:var(--mut); font-size:14px; }
   .msg { margin-top:8px; font-size:14px; } .msg.ok { color:var(--ok); } .msg.warn { color:var(--warn); } .msg.err { color:var(--err); }
@@ -47,8 +57,14 @@
   .dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
   .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
   .stat b { display:block; font-size:20px; } .stat span { font-size:13px; color:var(--mut); }
-  .banner { background:#fff4dc; border-radius:12px; padding:10px 12px; margin-top:12px; font-size:14px; }
-  .banner button { margin-top:8px; padding:9px; }
+  .sumcard { margin-top:14px; padding:10px 12px; }
+  .sumcard h2 { font-size:15px; margin:0 0 4px; }
+  .sumcard .stats { grid-template-columns:repeat(4,1fr); gap:6px; margin-top:2px; }
+  .sumcard .stat b { font-size:15px; } .sumcard .stat span { font-size:11px; line-height:1.2; display:block; }
+  .sumcard .mut { font-size:12px; margin-top:6px; }
+  .banner { display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--mut); border-radius:10px; padding:2px 4px 2px 12px; margin-top:8px; font-size:13px; }
+  .banner[hidden] { display:none; }
+  .banner button { width:auto; margin:0; padding:7px 12px; font-size:13px; }
 
   /* nav */
   nav { position:fixed; left:0; right:0; bottom:0; display:flex; background:#fff; border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:5; }
@@ -75,7 +91,7 @@
   .need { margin-top:8px; padding:8px; background:#fff6e5; border-radius:8px; font-size:14px; }
   .restline { color:var(--mut); font-size:14px; padding:3px 2px; }
   pre { white-space:pre-wrap; word-break:break-word; font-size:12px; background:#f0f2f5; padding:8px; border-radius:8px; max-height:260px; overflow:auto; }
-  #toast { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(84px + env(safe-area-inset-bottom)); background:#1c1f24; color:#fff; padding:10px 16px; border-radius:20px; font-size:14px; z-index:20; max-width:90%; text-align:center; }
+  #toast { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(84px + env(safe-area-inset-bottom)); background:#1c1f24; color:#fff; padding:10px 16px; border-radius:20px; font-size:14px; z-index:20; pointer-events:none; max-width:90%; text-align:center; }
   #toast[hidden] { display:none; }
 </style>
 </head>
@@ -95,21 +111,21 @@
     <button id="today" class="today">Oggi</button>
   </div>
   <div id="banner" class="banner" hidden>
-    Hai modifiche non salvate in una copia di sicurezza.
-    <button id="bannerBtn">Salva copia</button>
+    <span id="bannerTxt"></span>
+    <button id="bannerBtn" class="ghost">Salva copia</button>
   </div>
-  <div class="wd"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
+    <div class="wd"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
   <div id="grid"></div>
   <div class="legend">
-    <span><i class="dot" style="background:#e0a100"></i>Astra</span>
-    <span><i class="dot" style="background:#12a086"></i>Centrale</span>
-    <span><i class="dot" style="background:#4a66e8"></i>Moderno</span>
+    <span><i class="dot" style="background:#7a1f3d"></i>Astra</span>
+    <span><i class="dot" style="background:#1f9d55"></i>Centrale</span>
+    <span><i class="dot" style="background:#f0262c"></i>Moderno</span>
     <span><i class="dot" style="background:#c9ced8"></i>Riposo</span>
   </div>
-  <div class="card" style="margin-top:14px">
+  <div class="card sumcard">
     <h2 id="statTitle">Riepilogo</h2>
     <div class="stats" id="stats"></div>
-    <div class="mut" id="statNote" style="margin-top:8px"></div>
+    <div class="mut" id="statNote"></div>
   </div>
 </section>
 
@@ -139,6 +155,12 @@
       <label class="f">Minuti prima del primo spettacolo<input type="number" id="setAp" inputmode="numeric" min="0" max="240"></label>
       <label class="f">Minuti dopo l'ultimo spettacolo<input type="number" id="setCh" inputmode="numeric" min="0" max="240"></label>
     </div>
+    <div class="grid2" style="margin-top:10px">
+      <label class="f">Minuti dopo metà dell'ultimo film («fino all'intervallo»)<input type="number" id="setDi" inputmode="numeric" min="0" max="120"></label>
+      <label class="f">Copia dopo ogni PDF<select id="setAuto"><option value="1">Proponila subito</option><option value="0">Non proporla</option></select></label>
+      <label class="f">Tempo di pressione per timbrare<select id="setHold"><option value="500">0,5 secondi</option><option value="1000">1 secondo</option><option value="1500">1,5 secondi</option><option value="2000">2 secondi</option><option value="3000">3 secondi</option></select></label>
+      <label class="f">Riepilogo ore<select id="setSub"><option value="0">Pause comprese</option><option value="1">Pause tolte</option></select></label>
+    </div>
     <label class="f" style="margin-top:10px">Indirizzo del ponte per leggere il sito (facoltativo)<input type="url" id="setBridge" placeholder="https://script.google.com/macros/s/…/exec"></label>
     <label class="f" style="margin-top:10px">Chiave del ponte (se l'hai impostata)<input type="text" id="setKey" autocomplete="off"></label>
     <button id="btnSettings">Salva impostazioni</button>
@@ -152,7 +174,8 @@
   </div>
 </section>
 
-<nav>
+<div id="badgeCard" class="dock" hidden></div>
+<nav id="nav">
   <button id="nav-cal" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendario</button>
   <button id="nav-imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0l-4-4m4 4l4-4M4 19h16"/></svg>Importa</button>
   <button id="nav-dat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>Dati</button>
@@ -172,6 +195,7 @@ function titleKey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ')
 function normTxt(s) {
   return String(s == null ? '' : s)
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[\u2013\u2014]/g, '-')
     .toUpperCase().replace(/\s+/g, ' ').trim();
 }
 
@@ -325,17 +349,113 @@ function resolveDates(days, today) {
   return { dates: out, warnings: warnings };
 }
 
-/* Traduce una cella del PDF in un turno. */
+/* ---------- interpretazione delle celle ---------- */
+
+var ENDPOINT = '(AP|CH|(?:XX)?DI|\\d{1,2}[.:]\\d{2})';
+var RANGE_RE = new RegExp('(^|\\s)' + ENDPOINT + '\\s*-\\s*' + ENDPOINT + '(?=\\s|$)');
+var ROLE_WORDS = /^(SALA|CASSA|BAR)$/;
+
+function normTime(t) {
+  var m = /^(\d{1,2})[.:](\d{2})$/.exec(t);
+  if (!m) return null;
+  var h = parseInt(m[1], 10), mi = parseInt(m[2], 10);
+  if (h > 23 || mi > 59) return null;
+  return pad2(h) + ':' + pad2(mi);
+}
+
+function endpointKind(s) { return s === 'AP' ? 'AP' : (s === 'CH' ? 'CH' : (/DI$/.test(s) ? 'DI' : 'T')); }
+
+/* Cerca in un testo un'espressione di orario: "AP-CH", "9.30-13.00", "AP-20.30", "17.30-CH", oppure "AP" / "CH" da soli. */
+function parseExpr(text) {
+  var m = RANGE_RE.exec(text);
+  if (m) {
+    var ka = endpointKind(m[2]), kb = endpointKind(m[3]);
+    var va = ka === 'T' ? normTime(m[2]) : null, vb = kb === 'T' ? normTime(m[3]) : null;
+    var valid = ka !== 'CH' && ka !== 'DI' && kb !== 'AP' && (ka !== 'T' || va) && (kb !== 'T' || vb);
+    if (valid) {
+      var before = text.slice(0, m.index);
+      var after = text.slice(m.index + m[0].length);
+      return { startKind: ka, startVal: va, endKind: kb, endVal: vb, leftover: (before + ' ' + after).replace(/\s+/g, ' ').trim() };
+    }
+  }
+  if (text === 'AP') return { startKind: 'AP', startVal: null, endKind: null, endVal: null, leftover: '' };
+  if (text === 'CH') return { startKind: null, startVal: null, endKind: 'CH', endVal: null, leftover: '' };
+  return null;
+}
+
+function modeFromExpr(e) {
+  if (e.startKind === 'AP' && e.endKind === 'CH') return 'APCH';
+  if (e.startKind === 'AP' && e.endKind === 'T') return 'APFIX';
+  if (e.startKind === 'AP' && e.endKind === 'DI') return 'APDI';
+  if (e.startKind === 'T' && e.endKind === 'DI') return 'FIXDI';
+  if (e.startKind === 'T' && e.endKind === 'CH') return 'FIXCH';
+  if (e.startKind === 'T' && e.endKind === 'T') return 'FIXED';
+  if (e.startKind === 'AP') return 'AP';
+  return 'CH';
+}
+
+/* per mettere in ordine i turni di una stessa giornata (l'apertura "AP" e' di solito pomeriggio) */
+function shiftSortKey(e) {
+  if (e.startKind === 'T') return hmToMinLoose(e.startVal);
+  if (e.startKind === 'AP') return 14 * 60;
+  return 24 * 60;
+}
+function hmToMinLoose(hm) { var m = /^(\d{2}):(\d{2})$/.exec(hm || ''); return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 0; }
+
+function leftoverNote(l) { return String(l || '').replace(/\bCCA\b/g, 'orario circa').replace(/\s+/g, ' ').trim(); }
+
+/*
+ * Una cella puo' contenere piu' turni: ogni riga (ORARIO, ATTIVITA, ORARIO 2) che contiene un orario
+ * ("9.30-13.00", "AP-20.30", "AP-CH"...) diventa un turno. Le righe senza orario sono descrizioni:
+ * ATTIVITA = ruolo (vale per tutti i turni), le altre = note del turno piu' vicino.
+ * La pausa vale per l'ultimo turno della giornata (sera/pomeriggio).
+ * Ritorna null (cella vuota), {rest:true} oppure {rest:false, shifts:[...]}.
+ */
 function interpretCell(cell) {
   var o = cell.orario || '', a = cell.attivita || '', o2 = cell.orario2 || '', p = cell.pausa || '';
   if (!o && !a && !o2 && !p) return null;
-  if (a === 'RIPOSO' || o === 'RIPOSO') return { rest: true };
-  var mode = 'MANUAL';
-  if (o === 'AP-CH') mode = 'APCH';
-  else if (o === 'AP') mode = 'AP';
-  else if (o === 'CH') mode = 'CH';
+  if (a === 'RIPOSO' || o === 'RIPOSO' || o2 === 'RIPOSO') return { rest: true };
   var pausa = (p.match(/\d+/) || [''])[0];
-  return { rest: false, mode: mode, role: a, extra: o2, pausa: pausa, orario: o };
+
+  var rows = [{ key: 'orario', text: o }, { key: 'attivita', text: a }, { key: 'orario2', text: o2 }];
+  var found = [];
+  rows.forEach(function (r, i) {
+    if (!r.text) return;
+    var e = parseExpr(r.text);
+    if (e) { r.used = true; found.push({ ri: i, e: e, role: '', lead: [], tail: [] }); }
+  });
+
+  if (!found.length) {
+    // nessun orario riconosciuto: un solo turno da completare a mano (come prima)
+    return { rest: false, shifts: [{ mode: 'MANUAL', role: a, extra: o2, orario: o, pausa: pausa, fixStart: '', fixEnd: '' }] };
+  }
+
+  found.forEach(function (f) {
+    if (f.e.leftover) {
+      if (ROLE_WORDS.test(f.e.leftover)) f.role = f.e.leftover; else f.tail.push(leftoverNote(f.e.leftover));
+    }
+  });
+  rows.forEach(function (r, i) {
+    if (!r.text || r.used) return;
+    if (r.key === 'attivita') {
+      found.forEach(function (f) { if (!f.role) f.role = r.text; });
+      return;
+    }
+    var target = null, k;
+    for (k = 0; k < found.length; k++) if (found[k].ri > i) { target = found[k]; break; }
+    if (!target) for (k = found.length - 1; k >= 0; k--) if (found[k].ri < i) { target = found[k]; break; }
+    if (target) target.lead.push(r.text);
+  });
+
+  found.sort(function (x, y) { return shiftSortKey(x.e) - shiftSortKey(y.e); });
+  var shifts = found.map(function (f, idx) {
+    return {
+      mode: modeFromExpr(f.e), role: f.role, extra: f.lead.concat(f.tail).join(' · '),
+      orario: rows[f.ri].text, pausa: idx === found.length - 1 ? pausa : '',
+      fixStart: f.e.startKind === 'T' ? f.e.startVal : '', fixEnd: f.e.endKind === 'T' ? f.e.endVal : ''
+    };
+  });
+  return { rest: false, shifts: shifts };
 }
 
 /* Elenco dei turni a partire dal PDF letto. */
@@ -347,11 +467,9 @@ function buildShifts(parsed, dates) {
       if (!cell) return;
       var it = interpretCell(cell);
       if (!it) return;
-      shifts.push({
-        date: dates[i], dayNum: d.dayNum, weekday: d.weekday, cinema: c,
-        rest: it.rest, mode: it.mode, role: it.role, extra: it.extra, pausa: it.pausa, orario: it.orario,
-        rawCell: cell
-      });
+      var base = { date: dates[i], dayNum: d.dayNum, weekday: d.weekday, cinema: c, rawCell: cell };
+      if (it.rest) { shifts.push(Object.assign({ rest: true }, base)); return; }
+      it.shifts.forEach(function (s) { shifts.push(Object.assign({ rest: false }, base, s)); });
     });
   });
   return shifts;
@@ -383,6 +501,7 @@ function computeShift(mode, films, durations, offs) {
     var dur = (durations && durations[titleKey(f.title)]) || f.duration || null;
     (f.times || []).forEach(function (t) {
       var s = hmToMin(t);
+      if (s != null && s < 300) s += 1440; // spettacoli dopo mezzanotte (es. 00:15) contano come "giorno dopo"
       if (s != null) shows.push({ title: f.title, start: s, dur: dur });
     });
   });
@@ -391,7 +510,13 @@ function computeShift(mode, films, durations, offs) {
   var first = shows[0], last = shows[shows.length - 1];
   var res = { start: null, end: null, missingTitle: null, firstShow: minToHm(first.start), lastShow: minToHm(last.start) };
 
-  if (mode === 'APCH' || mode === 'AP') res.start = minToHm(first.start - offs.ap);
+  if (mode === 'APCH' || mode === 'AP' || mode === 'APDI') res.start = minToHm(first.start - offs.ap);
+
+  if (mode === 'APDI' || mode === 'DI') {
+    // fino all'ultimo intervallo: circa meta' dell'ultimo film + margine
+    if (!last.dur) res.missingTitle = last.title;
+    else res.end = minToHm(last.start + Math.round(last.dur / 2) + (offs.di == null ? 15 : offs.di));
+  }
 
   if (mode === 'APCH' || mode === 'CH') {
     if (!last.dur) {
@@ -534,19 +659,19 @@ function parseShowtimesHtml(html) {
 /* ===================== Gestionale ===================== */
 
 const CINEMA = {
-  ASTRA:    { nome: 'Astra',    col: '#e0a100', letter: 'A', param: 'astra' },
-  CENTRALE: { nome: 'Centrale', col: '#12a086', letter: 'C', param: 'centrale' },
-  MODERNO:  { nome: 'Moderno',  col: '#4a66e8', letter: 'M', param: 'moderno' }
+  ASTRA:    { nome: 'Astra',    col: '#7a1f3d', letter: 'A', param: 'astra' },
+  CENTRALE: { nome: 'Centrale', col: '#1f9d55', letter: 'C', param: 'centrale' },
+  MODERNO:  { nome: 'Moderno',  col: '#f0262c', letter: 'M', param: 'moderno' }
 };
 const MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
 const MESI_B = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 const GG = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 const GG_L = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
-const MODE_LABEL = { APCH: 'Apertura–Chiusura', AP: 'Solo apertura', CH: 'Solo chiusura', MANUAL: 'Orario a mano' };
+const MODE_LABEL = { APCH: 'Apertura–Chiusura', APFIX: 'Apertura → ora fissa', APDI: 'Apertura → fino all\'intervallo', FIXDI: 'Ora fissa → fino all\'intervallo', FIXCH: 'Ora fissa → Chiusura', FIXED: 'Orari fissi', AP: 'Solo apertura', CH: 'Solo chiusura', MANUAL: 'Orario a mano' };
 
 const S = {
   shifts: [],
-  settings: { apMin: 45, chMin: 15, bridgeUrl: '', bridgeKey: '', durations: {} },
+  settings: { apMin: 45, chMin: 15, diMin: 15, subPause: false, autoBk: true, holdMs: 1000, bridgeUrl: '', bridgeKey: '', durations: {} },
   month: null, tab: 'cal', lastChange: null, lastBackup: null
 };
 let IMP = null;
@@ -558,7 +683,7 @@ const cap = s => { s = String(s || '').trim().toLowerCase(); return s.charAt(0).
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
 const say = (id, text, cls) => { const el = $(id); el.textContent = text || ''; el.className = 'msg' + (cls ? ' ' + cls : ''); };
 let toastTimer = null;
-function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2600); }
+function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; { const nv = $('nav'), dk = $('badgeCard'); el.style.bottom = ((nv ? nv.offsetHeight : 60) + (dk && !dk.hidden ? dk.offsetHeight : 0) + 12) + 'px'; } clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2600); }
 
 function todayIso() { const n = new Date(); return fmtDate(n.getFullYear(), n.getMonth(), n.getDate()); }
 function dateObj(iso) { const p = iso.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
@@ -569,6 +694,15 @@ function durMin(s) {
   const a = hmToMin(s.start); let b = hmToMin(s.end);
   if (a == null || b == null) return null;
   if (b <= a) b += 1440;
+  return b - a;
+}
+/* ore effettive (badge): da 'realStart' a 'realEnd'; se mancano si usano quelle previste */
+function realDurMin(s) {
+  if (!s.realStart || !s.realEnd) return null;
+  const a = hmToMin(s.realStart); let b = hmToMin(s.realEnd);
+  if (a == null || b == null) return null;
+  if (b === a) return 0; // entrata e uscita nello stesso minuto (doppio tocco): niente turno da 24 ore
+  if (b < a) b += 1440;
   return b - a;
 }
 function fmtDur(min) { const h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + pad2(m) + ' min' : ''); }
@@ -609,13 +743,21 @@ async function commit(puts, dels, clear) {
   await metaSet('lastChange', S.lastChange);
   if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
 }
+/* promemoria leggero: solo se non c'e' mai stata una copia o l'ultima e' vecchia di piu' di 14 giorni */
+function backupNeeded() {
+  if (!S.shifts.length) return '';
+  if (!S.lastBackup) return 'Nessuna copia di sicurezza.';
+  const days = Math.floor((Date.now() - new Date(S.lastBackup).getTime()) / 86400000);
+  return days > 14 ? 'Ultima copia: ' + days + ' giorni fa.' : '';
+}
 const isDirty = () => S.shifts.length > 0 && S.lastChange && (!S.lastBackup || S.lastChange > S.lastBackup);
 
 /* ---------- navigazione ---------- */
 function setTab(t) {
   S.tab = t;
+  holdStop();
   ['cal', 'imp', 'dat'].forEach(k => { $('tab-' + k).hidden = k !== t; $('nav-' + k).classList.toggle('on', k === t); });
-  if (t === 'cal') renderCal();
+  if (t === 'cal') renderCal(); else renderBadgeCard();
   if (t === 'dat') renderData();
   window.scrollTo(0, 0);
 }
@@ -624,16 +766,85 @@ function setTab(t) {
 function monthStats(y, m) {
   const pre = y + '-' + pad2(m + 1) + '-';
   const work = new Set(), rest = new Set();
-  let min = 0, pause = 0, missing = 0;
+  let min = 0, pause = 0, missing = 0, real = 0;
   S.shifts.forEach(s => {
     if (!s.date.startsWith(pre)) return;
     if (s.rest) { rest.add(s.date); return; }
     work.add(s.date);
-    const d = durMin(s);
-    if (d == null) missing++; else { min += d; pause += parseInt(s.pausa, 10) || 0; }
+    const rd = realDurMin(s);
+    const d = rd != null ? rd : durMin(s);
+    if (d == null) { missing++; return; }
+    if (rd != null) real++;
+    const pz = parseInt(s.pausa, 10) || 0;
+    min += S.settings.subPause ? Math.max(0, d - pz) : d; pause += pz;
   });
-  return { work: work.size, rest: rest.size, min: min, pause: pause, missing: missing };
+  return { work: work.size, rest: rest.size, min: min, pause: pause, missing: missing, real: real };
 }
+
+function holdBtn(kind, id) {
+  return '<button class="hold' + (kind === 'out' ? ' out' : '') + '" data-hold data-bd="' + kind + '" data-id="' + id + '"><i class="hfill"></i><span class="lbl">Tieni premuto: ' + (kind === 'out' ? 'uscita' : 'entrata') + '</span></button>';
+}
+function elapsedTxt(s) {
+  const p = s.date.split('-'), h = hmToMin(s.realStart);
+  if (h == null) return '';
+  const start = new Date(+p[0], +p[1] - 1, +p[2], Math.floor(h / 60), h % 60).getTime();
+  const m = Math.max(0, Math.floor((Date.now() - start) / 60000));
+  return fmtDur(m);
+}
+function renderBadgeCard() {
+  const t = todayIso(), y = prevIso(t), box = $('badgeCard');
+  const open = S.shifts.filter(s => !s.rest && ((s.date === t && !s.realEnd) || (s.date === y && s.realStart && !s.realEnd))).sort(byStart);
+  const live = open.find(s => s.realStart && !s.realEnd);
+  const cur = live || open.find(s => !s.realStart);
+  if (!cur || S.tab !== 'cal') { box.hidden = true; box.innerHTML = ''; document.body.style.paddingBottom = ''; return; }
+  const plan = cur.start && cur.end ? esc(cur.start) + ' – ' + esc(cur.end) : 'orario da inserire';
+  const others = open.filter(s => s.id !== cur.id && !s.realStart && !s.realEnd).length;
+  let h;
+  if (live) {
+    h = '<div class="dk-t dk-live">In servizio da ' + esc(elapsedTxt(live)) + '</div><div class="dk-s">' + esc(CINEMA[live.cinema].nome) + (live.date === y ? ' (ieri)' : '') + ' · entrato alle ' + esc(live.realStart) + ' · previsto ' + plan + '</div>' + holdBtn('out', live.id);
+  } else {
+    h = '<div class="dk-t">' + esc(CINEMA[cur.cinema].nome) + ' · ' + plan + '</div>' + (others ? '<div class="dk-s">+ ' + others + (others === 1 ? ' altro turno' : ' altri turni') + ' oggi</div>' : '') + holdBtn('in', cur.id);
+  }
+  box.className = 'dock' + (live ? ' live' : ''); box.innerHTML = h; box.hidden = false;
+  box.style.bottom = $('nav').offsetHeight + 'px';
+  document.body.style.paddingBottom = 'calc(' + ($('nav').offsetHeight + box.offsetHeight + 16) + 'px + env(safe-area-inset-bottom))';
+}
+setInterval(() => { if (S.tab === 'cal' && !$('badgeCard').hidden && $('badgeCard').classList.contains('live')) renderBadgeCard(); }, 30000);
+
+/* ---------- tasto "tieni premuto" (vale per il riquadro in basso e per la scheda del giorno) ---------- */
+const holdState = { el: null, raf: 0, t0: 0 };
+function holdMs() { return S.settings.holdMs || 1000; }
+function holdStop() {
+  if (!holdState.el) return;
+  cancelAnimationFrame(holdState.raf);
+  const f = holdState.el.querySelector('.hfill'); if (f) f.style.width = '0';
+  holdState.el = null;
+}
+async function holdDone(el) {
+  const rec = await stamp(el.dataset.id, el.dataset.bd);
+  if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
+  if (rec && !$('sheet').hidden) openDay(rec.date);
+}
+function holdStep() {
+  const el = holdState.el; if (!el) return;
+  const p = Math.min(1, (performance.now() - holdState.t0) / holdMs());
+  const f = el.querySelector('.hfill'); if (f) f.style.width = (p * 100) + '%';
+  if (p >= 1) { holdState.el = null; holdDone(el); return; }
+  holdState.raf = requestAnimationFrame(holdStep);
+}
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest && e.target.closest('[data-hold]'); if (!el) return;
+  e.preventDefault(); holdStop(); holdState.el = el; holdState.t0 = performance.now();
+  try { el.setPointerCapture(e.pointerId); } catch (x) {}
+  holdState.raf = requestAnimationFrame(holdStep);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(n => document.addEventListener(n, e => { if (holdState.el && (n !== 'pointerleave' || e.target === holdState.el)) holdStop(); }, true));
+document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('[data-hold]')) e.preventDefault(); });
+/* tastiera / accessibilita': Invio o Spazio (detail 0) timbrano subito */
+document.addEventListener('click', e => {
+  const el = e.target.closest && e.target.closest('[data-hold]');
+  if (el && e.detail === 0) holdDone(el);
+});
 
 function renderCal() {
   const y = S.month.y, m = S.month.m;
@@ -657,16 +868,23 @@ function renderCal() {
     h += '<button class="day' + (di === tIso ? ' today' : '') + '" data-date="' + di + '"><span class="n">' + d + '</span>' + chips + '</button>';
   }
   $('grid').innerHTML = h;
-  $('banner').hidden = !isDirty();
+  const bk = backupNeeded(); $('banner').hidden = !bk; $('bannerTxt').textContent = bk || '';
+  renderBadgeCard();
 
+  renderStats();
+}
+
+function renderStats() {
+  const y = S.month.y, m = S.month.m;
   const st = monthStats(y, m);
   $('statTitle').textContent = 'Riepilogo di ' + MESI[m].toLowerCase();
   $('stats').innerHTML =
     '<div class="stat"><b>' + st.work + '</b><span>giorni di lavoro</span></div>' +
     '<div class="stat"><b>' + st.rest + '</b><span>giorni di riposo</span></div>' +
-    '<div class="stat"><b>' + (st.min ? fmtDur(st.min) : '0 h') + '</b><span>ore di turno</span></div>' +
-    '<div class="stat"><b>' + (st.pause ? fmtDur(st.pause) : '0 h') + '</b><span>di cui pause</span></div>';
-  $('statNote').textContent = 'Le ore sono quelle da inizio a fine turno, pause comprese.' +
+    '<div class="stat"><b>' + (st.min ? fmtDur(st.min) : '0 h') + '</b><span>' + (S.settings.subPause ? 'ore nette' : 'ore di turno') + '</span></div>' +
+    '<div class="stat"><b>' + (st.pause ? fmtDur(st.pause) : '0 h') + '</b><span>' + (S.settings.subPause ? 'pause tolte' : 'di cui pause') + '</span></div>';
+  $('statNote').textContent = (S.settings.subPause ? 'Le ore sono da inizio a fine turno, tolte le pause.' : 'Le ore sono da inizio a fine turno, pause comprese.') +
+    (st.real ? ' ' + st.real + (st.real === 1 ? ' turno è conteggiato' : ' turni sono conteggiati') + ' con le ore effettive timbrate.' : '') +
     (st.missing ? ' ' + st.missing + (st.missing === 1 ? ' turno senza orario non è' : ' turni senza orario non sono') + ' conteggiati.' : '');
 }
 
@@ -677,8 +895,25 @@ $('grid').addEventListener('click', e => { const b = e.target.closest('.day[data
 $('bannerBtn').addEventListener('click', () => saveCopy());
 
 /* ---------- finestra in basso ---------- */
-function openSheet(html) { $('sheetBody').innerHTML = html; $('sheet').hidden = false; document.body.classList.add('noscroll'); }
-function closeSheet() { $('sheet').hidden = true; document.body.classList.remove('noscroll'); if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(false); } }
+let sheetPushed = false, pendingBack = 0;
+function openSheet(html) {
+  $('sheetBody').innerHTML = html; $('sheet').hidden = false; document.body.classList.add('noscroll');
+  if (!sheetPushed) { try { history.pushState({ sheet: 1 }, ''); sheetPushed = true; } catch (e) {} }
+}
+/* chiude la finestra; se aveva aggiunto una voce alla cronologia, la toglie (cosi' il tasto indietro del telefono la chiude) */
+function hideSheet() {
+  $('sheet').hidden = true; document.body.classList.remove('noscroll');
+  if (sheetPushed) { sheetPushed = false; pendingBack++; history.back(); }
+}
+function closeSheet() { hideSheet(); if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(false); } }
+window.addEventListener('popstate', () => {
+  if (pendingBack > 0) { pendingBack--; return; }
+  if (sheetPushed) {
+    sheetPushed = false;
+    $('sheet').hidden = true; document.body.classList.remove('noscroll');
+    if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(false); }
+  }
+});
 $('sheet').addEventListener('click', e => { if (e.target === $('sheet')) closeSheet(); });
 
 let confirmResolve = null;
@@ -690,6 +925,42 @@ function askConfirm(text, okLabel, choices) {
     h += '<button class="ghost" data-act="close">Annulla</button>';
     openSheet(h);
   });
+}
+
+function badgeCanStamp(s) { const t = todayIso(), y = prevIso(t); return s.date === t || s.date === y; }
+function prevIso(iso) { const d = dateObj(iso); d.setUTCDate(d.getUTCDate() - 1); return fmtDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); }
+function nowHm() { const n = new Date(); return pad2(n.getHours()) + ':' + pad2(n.getMinutes()); }
+function badgeHtml(s) {
+  const rd = realDurMin(s);
+  let h = '';
+  if (s.realStart || s.realEnd) {
+    h += '<div class="badge-done">Effettivo: ' + esc(s.realStart || '?') + ' – ' + esc(s.realEnd || 'in corso') + (rd != null ? ' · ' + fmtDur(rd) : '');
+    const pd = durMin(s);
+    if (rd != null && pd != null && rd !== pd) { const df = rd - pd; h += ' (' + (df > 0 ? '+' : '−') + Math.abs(df) + ' min rispetto al previsto)'; }
+    h += '</div>';
+  }
+  if (badgeCanStamp(s)) {
+    if (!s.realStart) h += holdBtn('in', s.id);
+    else if (!s.realEnd) h += holdBtn('out', s.id);
+  }
+  return h;
+}
+async function stamp(id, kind) {
+  const s = S.shifts.find(x => x.id === id); if (!s) return;
+  const rec = Object.assign({}, s); const hm = nowHm();
+  if (kind === 'in') rec.realStart = hm; else rec.realEnd = hm;
+  if (kind === 'out') {
+    const d = realDurMin(rec);
+    if (d != null && d > 14 * 60) {
+      toast('Sono passate più di 14 ore dall\'entrata: correggi l\'uscita a mano');
+      openEdit(id);
+      return null;
+    }
+  }
+  await commit([rec], []);
+  toast((kind === 'in' ? 'Entrata ' : 'Uscita ') + 'registrata alle ' + hm);
+  renderCal();
+  return rec;
 }
 
 function openDay(di) {
@@ -705,6 +976,7 @@ function openDay(di) {
     h += '<div class="sh" style="border-left-color:' + CINEMA[s.cinema].col + '"><b>' + CINEMA[s.cinema].nome + (s.role ? ' · ' + esc(s.role) : '') + '</b>' +
       '<div class="big">' + (s.start && s.end ? esc(s.start) + ' – ' + esc(s.end) : 'Orario da inserire') + '</div>' +
       (d != null ? '<div class="mut">' + fmtDur(d) + '</div>' : '') +
+      badgeHtml(s) +
       (s.pausa ? '<div class="mut">Pausa ' + esc(s.pausa) + ' min</div>' : '') +
       (s.extra ? '<div class="mut">' + esc(s.extra) + '</div>' : '') +
       (s.note ? '<div>' + esc(s.note) + '</div>' : '') +
@@ -727,6 +999,9 @@ function openEdit(id, di) {
     '<label class="f">Inizio<input type="time" id="ed_start" value="' + esc(s.start) + '"></label>' +
     '<label class="f">Fine<input type="time" id="ed_end" value="' + esc(s.end) + '"></label>' +
     '<label class="f">Pausa (minuti)<input type="number" id="ed_pausa" inputmode="numeric" min="0" max="240" value="' + esc(s.pausa) + '"></label>' +
+    '<span></span>' +
+    '<label class="f">Entrata effettiva<input type="time" id="ed_rs" value="' + esc(s.realStart || '') + '"></label>' +
+    '<label class="f">Uscita effettiva<input type="time" id="ed_re" value="' + esc(s.realEnd || '') + '"></label>' +
     '</div>' +
     '<label class="f" style="margin-top:8px">Note<textarea id="ed_note">' + esc(s.note || '') + '</textarea></label>' +
     '<button data-act="save-edit" data-id="' + (id || '') + '">Salva</button><button class="ghost" data-act="close">Annulla</button>');
@@ -737,7 +1012,7 @@ $('sheetBody').addEventListener('click', async e => {
   if (!b) return;
   const act = b.dataset.act;
   if (act === 'close') { closeSheet(); return; }
-  if (act === 'confirm') { const r = confirmResolve; confirmResolve = null; $('sheet').hidden = true; document.body.classList.remove('noscroll'); if (r) r(b.dataset.choice || true); return; }
+  if (act === 'confirm') { const r = confirmResolve; confirmResolve = null; hideSheet(); if (r) r(b.dataset.choice || true); return; }
   if (act === 'add') { openEdit(null, b.dataset.date); return; }
   if (act === 'edit') { openEdit(b.dataset.id); return; }
   if (act === 'del') {
@@ -756,11 +1031,12 @@ $('sheetBody').addEventListener('click', async e => {
     const rec = Object.assign({}, old || { shows: '', extra: '', source: 'manual' }, {
       id: old ? old.id : uid(), date: date, rest: rest, cinema: $('ed_cinema').value,
       role: rest ? '' : cap($('ed_role').value), start: rest ? '' : start, end: rest ? '' : end,
-      pausa: rest ? '' : String($('ed_pausa').value || '').trim(), note: $('ed_note').value.trim()
+      pausa: rest ? '' : String($('ed_pausa').value || '').trim(), note: $('ed_note').value.trim(),
+      realStart: rest ? '' : $('ed_rs').value, realEnd: rest ? '' : $('ed_re').value
     });
     await commit([rec], []);
     const p = date.split('-'); S.month = { y: +p[0], m: +p[1] - 1 };
-    $('sheet').hidden = true; document.body.classList.remove('noscroll');
+    hideSheet();
     renderCal(); toast('Salvato');
   }
 });
@@ -842,7 +1118,7 @@ async function importPdf(f) {
     const n = new Date();
     const rd = resolveDates(days, { y: n.getFullYear(), m: n.getMonth(), d: n.getDate() });
     rd.warnings.forEach(w => warnings.push(w));
-    const shifts = buildShifts({ days: days }, rd.dates).map((s, i) => Object.assign(s, { id: i, include: !s.rest, start: '', end: '', site: null, calc: null }));
+    const shifts = buildShifts({ days: days }, rd.dates).map((s, i) => Object.assign(s, { id: i, include: !s.rest, start: s.fixStart || '', end: s.fixEnd || '', site: null, calc: null }));
     lastParseDebug = JSON.stringify({ nome: name, avvisi: warnings, giorni: days }, null, 1);
     IMP = { name: name, warnings: warnings, shifts: shifts };
     say('impMsg', 'PDF letto: ' + days.length + ' giorni' + (name ? ' (turni di ' + name + ')' : '') + '.' + (warnings.length ? ' Attenzione: ' + warnings.join(' ') : ''), warnings.length ? 'warn' : 'ok');
@@ -895,12 +1171,16 @@ function renderImp() {
 }
 
 function applyCompute(s) {
-  if (!s.site || s.site.ok === false || s.rest || s.mode === 'MANUAL') return;
-  const r = computeShift(s.mode, s.site.films, S.settings.durations, { ap: S.settings.apMin, ch: S.settings.chMin });
+  if (!s.site || s.site.ok === false || s.rest || s.mode === 'MANUAL' || s.mode === 'FIXED') return;
+  const calcMode = s.mode === 'APFIX' ? 'AP' : (s.mode === 'FIXCH' ? 'CH' : (s.mode === 'FIXDI' ? 'DI' : s.mode));
+  const r = computeShift(calcMode, s.site.films, S.settings.durations, { ap: S.settings.apMin, ch: S.settings.chMin, di: S.settings.diMin });
   s.calc = r;
   if (r.noShows) return;
-  if (r.start != null) s.start = r.start;
-  if (s.mode === 'APCH' || s.mode === 'CH') s.end = r.end != null ? r.end : '';
+  if (s.mode !== 'FIXCH' && r.start != null) s.start = r.start;
+  if (s.mode === 'FIXCH' && s.fixStart) s.start = s.fixStart;
+  if (s.mode === 'APFIX' && s.fixEnd) s.end = s.fixEnd;
+  if (calcMode === 'APCH' || calcMode === 'CH' || calcMode === 'APDI' || calcMode === 'DI') s.end = r.end != null ? r.end : '';
+  if (s.mode === 'FIXDI' && s.fixStart) s.start = s.fixStart;
 }
 
 $('impBody').addEventListener('change', async ev => {
@@ -924,7 +1204,7 @@ $('impBody').addEventListener('click', async ev => {
   if (ev.target.id === 'btnCalc') {
     const btn = ev.target; btn.disabled = true;
     try {
-      const todo = IMP.shifts.filter(s => !s.rest && s.include && s.mode !== 'MANUAL');
+      const todo = IMP.shifts.filter(s => !s.rest && s.include && s.mode !== 'MANUAL' && s.mode !== 'FIXED');
       if (!todo.length) { say('calcMsg', 'Nessun turno da calcolare.', 'warn'); return; }
       const cache = {};
       for (let n = 0; n < todo.length; n++) {
@@ -965,6 +1245,7 @@ $('impBody').addEventListener('click', async ev => {
     IMP = null; renderImp(); say('impMsg', '');
     setTab('cal');
     toast('Salvati ' + add.length + ' elementi' + (skipped ? ' (' + skipped + ' saltati: manca inizio o fine)' : ''));
+    if (S.settings.autoBk !== false) saveCopy();   // dopo ogni nuovo piano: copia di sicurezza subito
   }
 });
 
@@ -1017,6 +1298,7 @@ async function renderData() {
   const lb = S.lastBackup ? new Date(S.lastBackup).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }) : 'mai';
   $('bkInfo').textContent = 'Ultima copia: ' + lb + '. Salva la copia dove vuoi: Drive, WhatsApp, email o file.';
   $('setAp').value = S.settings.apMin; $('setCh').value = S.settings.chMin;
+  $('setDi').value = S.settings.diMin == null ? 15 : S.settings.diMin; $('setSub').value = S.settings.subPause ? '1' : '0'; $('setAuto').value = S.settings.autoBk === false ? '0' : '1'; $('setHold').value = String(S.settings.holdMs || 1000);
   $('setBridge').value = S.settings.bridgeUrl || ''; $('setKey').value = S.settings.bridgeKey || '';
   let pers = 'non verificato';
   try { if (navigator.storage && navigator.storage.persisted) pers = (await navigator.storage.persisted()) ? 'sì' : 'no (Chrome può liberare lo spazio se il telefono è pieno)'; } catch (e) {}
@@ -1026,10 +1308,14 @@ async function renderData() {
 $('btnSettings').addEventListener('click', async () => {
   S.settings.apMin = Math.max(0, parseInt($('setAp').value, 10) || 0);
   S.settings.chMin = Math.max(0, parseInt($('setCh').value, 10) || 0);
+  S.settings.diMin = Math.max(0, parseInt($('setDi').value, 10) || 0);
+  S.settings.subPause = $('setSub').value === '1';
+  S.settings.autoBk = $('setAuto').value !== '0';
+  S.settings.holdMs = parseInt($('setHold').value, 10) || 1000;
   S.settings.bridgeUrl = $('setBridge').value.trim();
   S.settings.bridgeKey = $('setKey').value.trim();
   await metaSet('settings', S.settings);
-  say('setMsg', 'Impostazioni salvate.', 'ok');
+  say('setMsg', 'Impostazioni salvate.', 'ok'); renderCal();
 });
 $('btnWipe').addEventListener('click', async () => {
   const ok = await askConfirm('Cancellare tutti i turni da questo telefono? Se non hai una copia, non si recuperano.', 'Cancella tutto');
