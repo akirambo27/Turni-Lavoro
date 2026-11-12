@@ -21,6 +21,15 @@
   h2 { margin:0 0 10px; font-size:18px; }
   h3 { margin:0 0 8px; font-size:18px; }
   .wrap { max-width:640px; margin:0 auto; padding:12px; }
+  .chip.xtra { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9); }
+  .dock.extra { background:rgba(255,247,230,.94); border-top-color:#d98a00; }
+  .dock .dk-x { color:#8a5a00; } .dock .dk-done { color:var(--mut); }
+  .dock .dk-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .dock.slim { padding-top:8px; padding-bottom:8px; }
+  .dock .xlink { flex:none; border:1px solid #d98a00; color:#8a5a00; background:rgba(217,138,0,.08); border-radius:999px; font-size:13px; font-weight:600; padding:6px 12px; margin:0; width:auto; height:auto; }
+  .dock .dk-warn { display:flex; justify-content:space-between; align-items:center; gap:10px; background:#fff1d6; border:1px solid #e0a030; color:#7a4a00; border-radius:10px; padding:8px 10px; font-size:13px; margin-bottom:8px; }
+  .dock .dk-note { display:block; width:100%; height:46px; margin:8px 0 0; font-size:15px; box-sizing:border-box; }
+  .hold.x { background:#d98a00; }
   .dock { position:fixed; left:0; right:0; z-index:6; background:rgba(238,242,255,.93); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-top:3px solid #2f5be7; box-shadow:0 -8px 20px rgba(20,30,60,.22); padding:10px 14px 12px; }
   .dock[hidden] { display:none; }
   .dock.live { background:rgba(255,241,241,.93); border-top-color:#f0262c; }
@@ -48,19 +57,21 @@
   #grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-top:4px; }
   .day { margin:0; padding:3px 2px; min-height:62px; background:var(--card); color:var(--ink); border-radius:8px; text-align:left; display:flex; flex-direction:column; gap:2px; align-items:stretch; box-shadow:0 1px 1px rgba(0,0,0,.05); overflow:hidden; }
   .day.empty { background:transparent; box-shadow:none; pointer-events:none; }
+  .day { position:relative; }
+  .day .miss { position:absolute; top:5px; right:5px; width:8px; height:8px; border-radius:50%; background:#e08a00; }
   .day.today { outline:2px solid var(--acc); }
   .day .n { font-size:12px; font-weight:600; padding-left:2px; }
   .chip { font-size:10px; line-height:1.2; color:#fff; border-radius:4px; padding:2px 3px; white-space:nowrap; overflow:hidden; text-overflow:clip; }
   .chip.rest { background:#c9ced8; color:#4a5160; }
   .more { font-size:10px; color:var(--mut); padding-left:2px; }
-  .legend { display:flex; gap:12px; flex-wrap:wrap; font-size:13px; color:var(--mut); margin-top:10px; }
+  .legend { display:flex; gap:9px; flex-wrap:wrap; font-size:12px; color:var(--mut); margin-top:10px; }
   .dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
   .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
   .stat b { display:block; font-size:20px; } .stat span { font-size:13px; color:var(--mut); }
   .sumcard { margin-top:14px; padding:10px 12px; }
   .sumcard h2 { font-size:15px; margin:0 0 4px; }
-  .sumcard .stats { grid-template-columns:repeat(4,1fr); gap:6px; margin-top:2px; }
-  .sumcard .stat b { font-size:15px; } .sumcard .stat span { font-size:11px; line-height:1.2; display:block; }
+  .sumcard .stats { grid-template-columns:repeat(4,auto); justify-content:space-between; gap:6px; margin-top:2px; }
+  .sumcard .stat b { font-size:15px; white-space:nowrap; } .sumcard .stat span { font-size:11px; line-height:1.2; display:block; }
   .sumcard .mut { font-size:12px; margin-top:6px; }
   .banner { display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--mut); border-radius:10px; padding:2px 4px 2px 12px; margin-top:8px; font-size:13px; }
   .banner[hidden] { display:none; }
@@ -121,6 +132,7 @@
     <span><i class="dot" style="background:#1f9d55"></i>Centrale</span>
     <span><i class="dot" style="background:#f0262c"></i>Moderno</span>
     <span><i class="dot" style="background:#c9ced8"></i>Riposo</span>
+    <span><i class="dot" style="background:#e08a00"></i>Non timbrato</span>
   </div>
   <div class="card sumcard">
     <h2 id="statTitle">Riepilogo</h2>
@@ -157,6 +169,7 @@
     </div>
     <div class="grid2" style="margin-top:10px">
       <label class="f">Minuti dopo metà dell'ultimo film («fino all'intervallo»)<input type="number" id="setDi" inputmode="numeric" min="0" max="120"></label>
+      <label class="f">Puntino sui turni non timbrati<select id="setMiss"><option value="1">Mostra</option><option value="0">Nascondi</option></select></label>
       <label class="f">Copia dopo ogni PDF<select id="setAuto"><option value="1">Proponila subito</option><option value="0">Non proporla</option></select></label>
       <label class="f">Tempo di pressione per timbrare<select id="setHold"><option value="500">0,5 secondi</option><option value="1000">1 secondo</option><option value="1500">1,5 secondi</option><option value="2000">2 secondi</option><option value="3000">3 secondi</option></select></label>
       <label class="f">Riepilogo ore<select id="setSub"><option value="0">Pause comprese</option><option value="1">Pause tolte</option></select></label>
@@ -601,13 +614,62 @@ function looksLikeTitle(line) {
   return true;
 }
 
+/* "1 ora 40 min", "2 ore e 5 minuti", "1h 40", "100 min", "100'" -> minuti (30..300) */
+function parseDurationText(text) {
+  var t = String(text || '');
+  var m = /(\d{1,2})\s*(?:ore|ora|h)\b\s*(?:e\s*)?(\d{1,2})?\s*(?:min\b|minuti|m\b)?/i.exec(t);
+  if (m) {
+    var v = parseInt(m[1], 10) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
+    if (v >= 30 && v <= 300) return v;
+  }
+  m = /(\d{2,3})\s*(?:min\b|minuti|'|’)/i.exec(t);
+  if (m) { var w = parseInt(m[1], 10); if (w >= 30 && w <= 300) return w; }
+  return null;
+}
+
+/* scheda del film: la riga "Durata" seguita (stessa riga o righe dopo) dal valore */
+function parseFilmPageDuration(html) {
+  var lines = htmlToLines(html).map(function (l) { return l.replace(HEAD_MARK, ''); });
+  for (var i = 0; i < lines.length; i++) {
+    if (!/^durata\b/i.test(lines[i])) continue;
+    var rest = lines[i].replace(/^durata\W*/i, '');
+    var v = parseDurationText(rest);
+    for (var k = 1; v == null && k <= 2 && i + k < lines.length; k++) v = parseDurationText(lines[i + k]);
+    if (v != null) return v;
+  }
+  return null;
+}
+
+/* "Je So’ Pazzo" -> "je-so-pazzo" come negli indirizzi del sito */
+function slugifyTitle(t) {
+  return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/['’‘`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/* tutti i collegamenti a schede film presenti nella pagina del programma: [{url, slug, text}] */
+function extractFilmLinks(html) {
+  var out = [], re = /<a\b[^>]*href=["']([^"']*\/film\/([a-z0-9][a-z0-9\-]*)\/?)["'][^>]*>([\s\S]*?)<\/a>/gi, m;
+  while ((m = re.exec(String(html || ''))) !== null) {
+    var url = m[1].replace(/&amp;/g, '&');
+    if (!/^https?:/i.test(url)) url = 'https://www.luccacinema.it' + (url.charAt(0) === '/' ? '' : '/') + url;
+    var text = decodeEntities(m[3].replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+    out.push({ url: url, slug: m[2], text: text });
+  }
+  return out;
+}
+
+/* indirizzo della scheda del film: dal collegamento nella pagina se c'e', altrimenti ricavato dal titolo */
+function filmPageUrl(title, links) {
+  var key = titleKey(title), slug = slugifyTitle(title), i;
+  for (i = 0; i < links.length; i++) if (links[i].text && titleKey(links[i].text) === key) return links[i].url;
+  for (i = 0; i < links.length; i++) if (links[i].slug === slug) return links[i].url;
+  return slug ? 'https://www.luccacinema.it/film/' + slug + '/' : null;
+}
+
 function findDuration(lines, from, to) {
   for (var i = Math.max(0, from); i <= Math.min(lines.length - 1, to); i++) {
-    var m = /durata\D{0,6}(\d{2,3})/i.exec(lines[i]) || /(\d{2,3})\s*(?:min\b|minuti|'|’)/i.exec(lines[i]);
-    if (m) {
-      var v = parseInt(m[1], 10);
-      if (v >= 30 && v <= 300) return v;
-    }
+    var v = /durata/i.test(lines[i]) || /\d\s*(?:min\b|minuti|'|\u2019|ore\b|ora\b)/i.test(lines[i]) ? parseDurationText(lines[i]) : null;
+    if (v != null) return v;
   }
   return null;
 }
@@ -791,25 +853,99 @@ function elapsedTxt(s) {
   const m = Math.max(0, Math.floor((Date.now() - start) / 60000));
   return fmtDur(m);
 }
+function nowMin() { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+function endAbs(s) { const a = hmToMin(s.start), e = hmToMin(s.end); return e <= a ? e + 1440 : e; }
+function nearestPlanned(list, nm) {
+  let best = null, bd = 1e9;
+  list.forEach(s => {
+    const a = hmToMin(s.start), e = hmToMin(s.end);
+    let d = 0;
+    if (a != null && e != null) d = nm < a ? a - nm : (nm > endAbs(s) ? nm - endAbs(s) : 0);
+    if (d < bd) { bd = d; best = s; }
+  });
+  return best;
+}
+function shiftMs(s, hm, add) { const p = s.date.split('-'), m = hmToMin(hm); return m == null ? null : new Date(+p[0], +p[1] - 1, +p[2], 0, 0).getTime() + (m + (add || 0)) * 60000; }
+function minTxt(ms) { return fmtDur(Math.max(0, Math.floor(ms / 60000))); }
+/* avviso (solo quando l'app è aperta): turno finito da oltre 1 h ma ancora "in servizio", oppure iniziato da oltre 1 h senza entrata */
+function warnHtml(s, kind) {
+  const H = 3600000; let msg = null;
+  if (s.isExtra) return '';
+  if (kind === 'out' && s.end && s.start) {
+    const e = shiftMs(s, s.end, hmToMin(s.end) <= hmToMin(s.start) ? 1440 : 0), d = Date.now() - e;
+    if (e != null && d > H) msg = 'Uscita dimenticata? Il turno finiva alle ' + esc(s.end) + ', da ' + minTxt(d) + '.';
+  } else if (kind === 'in' && s.start) {
+    const a = shiftMs(s, s.start), d = Date.now() - a;
+    if (a != null && d > H) msg = 'Entrata non timbrata. Il turno iniziava alle ' + esc(s.start) + ', da ' + minTxt(d) + '.';
+  }
+  return msg ? '<div class="dk-warn"><span>' + msg + '</span><button class="xlink" data-edit="' + s.id + '">Inserisci ora</button></div>' : '';
+}
+function inShiftWindow(list) {
+  const n = Date.now();
+  return list.some(s => {
+    if (!s.start || !s.end) return false;
+    const a = shiftMs(s, s.start), e = shiftMs(s, s.end, hmToMin(s.end) <= hmToMin(s.start) ? 1440 : 0);
+    return a != null && e != null && n >= a && n <= e;
+  });
+}
+/* cinema per un turno extra: quello del turno previsto più vicino oggi, altrimenti dell'ultimo turno svolto */
+function extraCinema(planned) {
+  const n = nearestPlanned(planned, nowMin()); if (n) return n.cinema;
+  const t = todayIso(), past = S.shifts.filter(s => !s.rest && s.date <= t && CINEMA[s.cinema]).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0)[0];
+  return past ? past.cinema : 'MODERNO';
+}
+let xOpen = false;   // pannello "turno extra" aperto
 function renderBadgeCard() {
   const t = todayIso(), y = prevIso(t), box = $('badgeCard');
-  const open = S.shifts.filter(s => !s.rest && ((s.date === t && !s.realEnd) || (s.date === y && s.realStart && !s.realEnd))).sort(byStart);
-  const live = open.find(s => s.realStart && !s.realEnd);
-  const cur = live || open.find(s => !s.realStart);
-  if (!cur || S.tab !== 'cal') { box.hidden = true; box.innerHTML = ''; document.body.style.paddingBottom = ''; return; }
-  const plan = cur.start && cur.end ? esc(cur.start) + ' – ' + esc(cur.end) : 'orario da inserire';
-  const others = open.filter(s => s.id !== cur.id && !s.realStart && !s.realEnd).length;
-  let h;
+  const hideDock = () => { box.hidden = true; box.innerHTML = ''; box.className = 'dock'; document.body.style.paddingBottom = ''; };
+  if (S.tab !== 'cal') { hideDock(); return; }
+  const planned = S.shifts.filter(s => !s.rest && !s.isExtra && s.date === t);
+  const live = S.shifts.filter(s => !s.rest && s.realStart && !s.realEnd && (s.date === t || s.date === y)).sort(byStart)[0];
+  const pending = planned.filter(s => !s.realStart && !s.realEnd).sort(byStart);
+  const cur = pending[0];
+  const inWin = inShiftWindow(planned);
+  const xlink = inWin ? '' : '<button class="xlink" data-x="1">＋ Extra</button>';
+  const xpanel = () => {
+    return '<div class="dk-head"><div><div class="dk-t dk-x">Turno extra</div><div class="dk-s">' + esc(CINEMA[extraCinema(planned)].nome) + '</div></div><button class="xlink" data-x="0">Annulla</button></div>' +
+      '<input id="dkNote" class="dk-note" type="text" maxlength="80" placeholder="Nota (facoltativa)">' +
+      '<button class="hold x" data-hold data-bd="xin" data-id=""><i class="hfill"></i><span class="lbl">Tieni premuto: entrata extra</span></button>';
+  };
+  let h = '', cls = 'dock';
   if (live) {
-    h = '<div class="dk-t dk-live">In servizio da ' + esc(elapsedTxt(live)) + '</div><div class="dk-s">' + esc(CINEMA[live.cinema].nome) + (live.date === y ? ' (ieri)' : '') + ' · entrato alle ' + esc(live.realStart) + ' · previsto ' + plan + '</div>' + holdBtn('out', live.id);
+    const ex = !!live.isExtra;
+    cls += ex ? ' extra' : ' live';
+    const plan = live.start && live.end ? esc(live.start) + ' – ' + esc(live.end) : 'orario da inserire';
+    h = (ex ? '' : warnHtml(live, 'out')) + '<div class="dk-t ' + (ex ? 'dk-x' : 'dk-live') + '">' + (ex ? 'Turno extra in corso da ' : 'In servizio da ') + '<span id="dkEl">' + esc(elapsedTxt(live)) + '</span></div>' +
+      '<div class="dk-s">' + esc(CINEMA[live.cinema].nome) + (live.date === y ? ' (ieri)' : '') + ' · entrato alle ' + esc(live.realStart) + (ex ? '' : ' · previsto ' + plan) + '</div>' +
+      (ex ? '<input id="dkNote" class="dk-note" type="text" maxlength="80" placeholder="Nota (facoltativa)" value="' + esc(live.note || '') + '"><button class="hold out" data-hold data-bd="out" data-id="' + live.id + '"><i class="hfill"></i><span class="lbl">Tieni premuto: uscita extra</span></button>' : holdBtn('out', live.id));
+  } else if (xOpen && !inWin) { cls += ' extra'; h = xpanel(); }
+  else if (cur) {
+    const plan = cur.start && cur.end ? esc(cur.start) + ' – ' + esc(cur.end) : 'orario da inserire';
+    const others = pending.length - 1;
+    h = warnHtml(cur, 'in') + '<div class="dk-head"><div><div class="dk-t">' + esc(CINEMA[cur.cinema].nome) + ' · ' + plan + '</div>' + (others ? '<div class="dk-s">+ ' + others + (others === 1 ? ' altro turno' : ' altri turni') + ' oggi</div>' : '') + '</div>' + xlink + '</div>' + holdBtn('in', cur.id);
   } else {
-    h = '<div class="dk-t">' + esc(CINEMA[cur.cinema].nome) + ' · ' + plan + '</div>' + (others ? '<div class="dk-s">+ ' + others + (others === 1 ? ' altro turno' : ' altri turni') + ' oggi</div>' : '') + holdBtn('in', cur.id);
+    cls += ' slim';
+    const rest = S.shifts.some(s => s.rest && s.date === t);
+    h = '<div class="dk-head"><div class="dk-t dk-done">' + (planned.length ? 'Turni di oggi completati' : (rest ? 'Oggi è giorno di riposo' : 'Nessun turno oggi')) + '</div>' + xlink + '</div>';
   }
-  box.className = 'dock' + (live ? ' live' : ''); box.innerHTML = h; box.hidden = false;
+  const oldN = $('dkNote'), keepN = oldN ? [oldN.dataset.m, oldN.value] : null;
+  box.className = cls; box.innerHTML = h; box.hidden = false;
+  const newN = $('dkNote'); if (newN) { newN.dataset.m = live ? 'live' : 'idle'; if (keepN && keepN[0] === newN.dataset.m && keepN[1]) newN.value = keepN[1]; }
   box.style.bottom = $('nav').offsetHeight + 'px';
   document.body.style.paddingBottom = 'calc(' + ($('nav').offsetHeight + box.offsetHeight + 16) + 'px + env(safe-area-inset-bottom))';
 }
-setInterval(() => { if (S.tab === 'cal' && !$('badgeCard').hidden && $('badgeCard').classList.contains('live')) renderBadgeCard(); }, 30000);
+$('badgeCard').addEventListener('click', e => {
+  const ed = e.target.closest('[data-edit]'); if (ed) { openEdit(ed.dataset.edit); return; }
+  const b = e.target.closest('[data-x]'); if (!b) return;
+  xOpen = b.dataset.x === '1'; renderBadgeCard();
+});
+/* ogni 30 s aggiorna solo il tempo trascorso (senza cancellare la nota in scrittura); cambia modalità se si esce/entra nella finestra */
+setInterval(() => {
+  if (S.tab !== 'cal') return;
+  const ae = document.activeElement;
+  if (ae && ae.id === 'dkNote') { const live = S.shifts.find(s => s.realStart && !s.realEnd && s.isExtra); const el = $('dkEl'); if (live && el) el.textContent = elapsedTxt(live); return; }
+  renderBadgeCard();
+}, 30000);
 
 /* ---------- tasto "tieni premuto" (vale per il riquadro in basso e per la scheda del giorno) ---------- */
 const holdState = { el: null, raf: 0, t0: 0 };
@@ -821,7 +957,8 @@ function holdStop() {
   holdState.el = null;
 }
 async function holdDone(el) {
-  const rec = await stamp(el.dataset.id, el.dataset.bd);
+  const nt = $('dkNote') ? $('dkNote').value : undefined;
+  const rec = el.dataset.bd === 'xin' ? await stampExtra(nt) : await stamp(el.dataset.id, el.dataset.bd, nt);
   if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
   if (rec && !$('sheet').hidden) openDay(rec.date);
 }
@@ -846,6 +983,21 @@ document.addEventListener('click', e => {
   if (el && e.detail === 0) holdDone(el);
 });
 
+/* giorni passati con turni non timbrati (o senza uscita): solo da quando hai iniziato a timbrare */
+function missingDays() {
+  const out = {};
+  if (S.settings.missDot === false) return out;
+  const stamped = S.shifts.filter(s => s.realStart || s.realEnd).map(s => s.date).sort();
+  if (!stamped.length) return out;
+  const first = stamped[0], t = todayIso(), y = prevIso(t);
+  S.shifts.forEach(s => {
+    if (s.rest || s.isExtra || s.date < first || s.date >= t) return;
+    if (s.realStart && s.realEnd) return;
+    if (s.date === y && s.realStart && !s.realEnd) return;   // ancora in servizio (turno oltre mezzanotte)
+    out[s.date] = true;
+  });
+  return out;
+}
 function renderCal() {
   const y = S.month.y, m = S.month.m;
   $('calTitle').textContent = MESI[m] + ' ' + y;
@@ -854,6 +1006,7 @@ function renderCal() {
   const by = {};
   S.shifts.forEach(s => { (by[s.date] = by[s.date] || []).push(s); });
   const tIso = todayIso();
+  const missing = missingDays();
   let h = '';
   for (let i = 0; i < lead; i++) h += '<div class="day empty"></div>';
   for (let d = 1; d <= dim; d++) {
@@ -862,10 +1015,10 @@ function renderCal() {
     let chips = '';
     list.slice(0, 2).forEach(s => {
       if (s.rest) chips += '<span class="chip rest">Riposo</span>';
-      else chips += '<span class="chip" style="background:' + CINEMA[s.cinema].col + '">' + CINEMA[s.cinema].letter + (s.start ? ' ' + esc(s.start) : ' ?') + '</span>';
+      else chips += '<span class="chip' + (s.isExtra ? ' xtra' : '') + '" style="background:' + CINEMA[s.cinema].col + '">' + CINEMA[s.cinema].letter + (s.start ? ' ' + esc(s.start) : ' ?') + '</span>';
     });
     if (list.length > 2) chips += '<span class="more">+' + (list.length - 2) + '</span>';
-    h += '<button class="day' + (di === tIso ? ' today' : '') + '" data-date="' + di + '"><span class="n">' + d + '</span>' + chips + '</button>';
+    h += '<button class="day' + (di === tIso ? ' today' : '') + '" data-date="' + di + '"><span class="n">' + d + '</span>' + (missing[di] ? '<i class="miss" title="Turno non timbrato"></i>' : '') + chips + '</button>';
   }
   $('grid').innerHTML = h;
   const bk = backupNeeded(); $('banner').hidden = !bk; $('bannerTxt').textContent = bk || '';
@@ -945,10 +1098,21 @@ function badgeHtml(s) {
   }
   return h;
 }
-async function stamp(id, kind) {
+async function stampExtra(note) {
+  const t = todayIso(), hm = nowHm();
+  const planned = S.shifts.filter(s => !s.rest && !s.isExtra && s.date === t);
+  const rec = { id: uid(), date: t, rest: false, cinema: extraCinema(planned), role: '', start: hm, end: '', pausa: '', note: (note || '').trim(), shows: '', extra: '', source: 'manual', isExtra: true, realStart: hm, realEnd: '' };
+  xOpen = false;
+  await commit([rec], []);
+  toast('Turno extra: entrata alle ' + hm);
+  renderCal();
+  return rec;
+}
+async function stamp(id, kind, note) {
   const s = S.shifts.find(x => x.id === id); if (!s) return;
   const rec = Object.assign({}, s); const hm = nowHm();
   if (kind === 'in') rec.realStart = hm; else rec.realEnd = hm;
+  if (kind === 'out' && s.isExtra) { rec.end = hm; if (note !== undefined) rec.note = String(note).trim(); }
   if (kind === 'out') {
     const d = realDurMin(rec);
     if (d != null && d > 14 * 60) {
@@ -973,7 +1137,7 @@ function openDay(di) {
       return;
     }
     const d = durMin(s);
-    h += '<div class="sh" style="border-left-color:' + CINEMA[s.cinema].col + '"><b>' + CINEMA[s.cinema].nome + (s.role ? ' · ' + esc(s.role) : '') + '</b>' +
+    h += '<div class="sh" style="border-left-color:' + CINEMA[s.cinema].col + '"><b>' + CINEMA[s.cinema].nome + (s.role ? ' · ' + esc(s.role) : '') + (s.isExtra ? ' · <span style="color:#b36b00">turno extra</span>' : '') + '</b>' +
       '<div class="big">' + (s.start && s.end ? esc(s.start) + ' – ' + esc(s.end) : 'Orario da inserire') + '</div>' +
       (d != null ? '<div class="mut">' + fmtDur(d) + '</div>' : '') +
       badgeHtml(s) +
@@ -1298,7 +1462,7 @@ async function renderData() {
   const lb = S.lastBackup ? new Date(S.lastBackup).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }) : 'mai';
   $('bkInfo').textContent = 'Ultima copia: ' + lb + '. Salva la copia dove vuoi: Drive, WhatsApp, email o file.';
   $('setAp').value = S.settings.apMin; $('setCh').value = S.settings.chMin;
-  $('setDi').value = S.settings.diMin == null ? 15 : S.settings.diMin; $('setSub').value = S.settings.subPause ? '1' : '0'; $('setAuto').value = S.settings.autoBk === false ? '0' : '1'; $('setHold').value = String(S.settings.holdMs || 1000);
+  $('setDi').value = S.settings.diMin == null ? 15 : S.settings.diMin; $('setSub').value = S.settings.subPause ? '1' : '0'; $('setAuto').value = S.settings.autoBk === false ? '0' : '1'; $('setHold').value = String(S.settings.holdMs || 1000); $('setMiss').value = S.settings.missDot === false ? '0' : '1';
   $('setBridge').value = S.settings.bridgeUrl || ''; $('setKey').value = S.settings.bridgeKey || '';
   let pers = 'non verificato';
   try { if (navigator.storage && navigator.storage.persisted) pers = (await navigator.storage.persisted()) ? 'sì' : 'no (Chrome può liberare lo spazio se il telefono è pieno)'; } catch (e) {}
@@ -1311,6 +1475,7 @@ $('btnSettings').addEventListener('click', async () => {
   S.settings.diMin = Math.max(0, parseInt($('setDi').value, 10) || 0);
   S.settings.subPause = $('setSub').value === '1';
   S.settings.autoBk = $('setAuto').value !== '0';
+  S.settings.missDot = $('setMiss').value !== '0';
   S.settings.holdMs = parseInt($('setHold').value, 10) || 1000;
   S.settings.bridgeUrl = $('setBridge').value.trim();
   S.settings.bridgeKey = $('setKey').value.trim();
