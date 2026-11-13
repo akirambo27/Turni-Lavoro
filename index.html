@@ -99,6 +99,9 @@
   .row { display:flex; gap:8px; align-items:center; } .row input[type=checkbox] { width:22px; height:22px; }
   .sub { color:var(--mut); font-size:14px; margin:2px 0 8px 30px; }
   .shows { font-size:14px; margin-top:8px; }
+  .durrow { display:flex; gap:8px; align-items:center; margin-top:8px; }
+  .durrow span { flex:1 1 auto; font-size:14px; min-width:0; overflow-wrap:anywhere; }
+  .durrow input { width:74px; margin:0; } .durrow button { width:auto; margin:0; padding:0 12px; height:40px; }
   .need { margin-top:8px; padding:8px; background:#fff6e5; border-radius:8px; font-size:14px; }
   .restline { color:var(--mut); font-size:14px; padding:3px 2px; }
   pre { white-space:pre-wrap; word-break:break-word; font-size:12px; background:#f0f2f5; padding:8px; border-radius:8px; max-height:260px; overflow:auto; }
@@ -182,6 +185,9 @@
   <div class="card">
     <h2>Stato</h2>
     <div class="mut" id="stState"></div>
+    <h2 style="margin-top:16px">Durate dei film salvate a mano</h2>
+    <div class="mut">Servono solo quando il sito non indica la durata. Se il sito la indica, vale quella del sito.</div>
+    <div id="durList"></div>
     <details style="margin-top:8px"><summary class="mut">Diagnostica</summary><pre id="debug">(niente ancora)</pre></details>
     <button id="btnWipe" class="ghost danger">Cancella tutti i dati</button>
   </div>
@@ -511,7 +517,7 @@ function minToHm(min) {
 function computeShift(mode, films, durations, offs) {
   var shows = [];
   (films || []).forEach(function (f) {
-    var dur = (durations && durations[titleKey(f.title)]) || f.duration || null;
+    var dur = f.duration || (durations && durations[titleKey(f.title)]) || null;   // la durata dal sito vince; quella salvata a mano e' solo una riserva
     (f.times || []).forEach(function (t) {
       var s = hmToMin(t);
       if (s != null && s < 300) s += 1440; // spettacoli dopo mezzanotte (es. 00:15) contano come "giorno dopo"
@@ -535,9 +541,11 @@ function computeShift(mode, films, durations, offs) {
     if (!last.dur) {
       res.missingTitle = last.title;
     } else {
-      var maxEnd = 0;
-      shows.forEach(function (s) { if (s.dur) maxEnd = Math.max(maxEnd, s.start + s.dur); });
+      var maxEnd = 0, endShow = null;
+      shows.forEach(function (s) { if (s.dur && s.start + s.dur > maxEnd) { maxEnd = s.start + s.dur; endShow = s; } });
       res.end = minToHm(maxEnd + offs.ch);
+      res.endBase = minToHm(maxEnd);
+      if (endShow) { res.endTitle = endShow.title; res.endShowStart = minToHm(endShow.start); res.endDur = endShow.dur; }
     }
   }
   return res;
@@ -676,7 +684,7 @@ function findDuration(lines, from, to) {
 
 /* ritorna [{title, times:[], duration|null}] */
 function parseFilms(lines) {
-  var films = [];
+  var films = [], lastTitle = null;
   var i = 0;
   while (i < lines.length) {
     if (!isTimeLine(lines[i])) { i++; continue; }
@@ -686,19 +694,19 @@ function parseFilms(lines) {
       i++;
     }
     var end = i - 1;
-    // titolo = prima riga "sensata" risalendo dal blocco di orari
-    var tIdx = -1, k;
+    // titolo = prima riga "sensata" risalendo dal blocco di orari (meglio un titolo di intestazione).
+    // Se risalendo si incontra un altro blocco di orari (stesso film con gli orari su piu' righe), vale il titolo di quel blocco.
+    var hIdx = -1, pIdx = -1, k, prevBlock = false;
     for (k = start - 1; k >= Math.max(0, start - 8); k--) {
-      if (lines[k].charAt(0) === HEAD_MARK && looksLikeTitle(lines[k].slice(1))) { tIdx = k; break; }
+      if (isTimeLine(lines[k])) { prevBlock = true; break; }
+      if (hIdx < 0 && lines[k].charAt(0) === HEAD_MARK && looksLikeTitle(lines[k].slice(1))) hIdx = k;
+      else if (pIdx < 0 && lines[k].charAt(0) !== HEAD_MARK && looksLikeTitle(lines[k])) pIdx = k;
     }
-    if (tIdx < 0) {
-      for (k = start - 1; k >= Math.max(0, start - 8); k--) {
-        if (lines[k].charAt(0) !== HEAD_MARK && looksLikeTitle(lines[k])) { tIdx = k; break; }
-      }
-    }
-    if (tIdx < 0) continue;
-    var title = lines[tIdx].replace(HEAD_MARK, '');
-    var dur = findDuration(lines, tIdx, end + 3);
+    var tIdx = hIdx >= 0 ? hIdx : pIdx, title, dur = null;
+    if (tIdx >= 0) { title = lines[tIdx].replace(HEAD_MARK, ''); dur = findDuration(lines, tIdx, end + 3); }
+    else if (prevBlock && lastTitle) { title = lastTitle; }
+    else continue;
+    lastTitle = title;
     var existing = null;
     for (var f = 0; f < films.length; f++) if (titleKey(films[f].title) === titleKey(title)) existing = films[f];
     if (existing) {
@@ -1145,6 +1153,7 @@ function openDay(di) {
       (s.extra ? '<div class="mut">' + esc(s.extra) + '</div>' : '') +
       (s.note ? '<div>' + esc(s.note) + '</div>' : '') +
       (s.shows ? '<div class="shows">Spettacoli: ' + esc(s.shows) + '</div>' : '') +
+      (s.calcTxt ? '<div class="shows">Calcolo — ' + esc(s.calcTxt) + '</div>' : '') +
       '<div class="btns"><button class="ghost" data-act="edit" data-id="' + s.id + '">Modifica</button><button class="ghost danger" data-act="del" data-id="' + s.id + '">Elimina</button></div></div>';
   });
   h += '<button data-act="add" data-date="' + di + '">+ Aggiungi turno</button><button class="ghost" data-act="close">Chiudi</button>';
@@ -1313,7 +1322,7 @@ function renderImp() {
     if (s.site && s.site.ok === false) shows = '<div class="shows msg err">' + esc(s.site.error) + '</div>';
     else if (s.site) {
       shows = s.site.films.length
-        ? '<div class="shows">' + s.site.films.map(f => { const d = S.settings.durations[titleKey(f.title)] || f.duration; return '<b>' + esc(f.title) + '</b>' + (d ? ' (' + d + ' min)' : '') + ': ' + esc(f.times.join(' · ')); }).join('<br>') + '</div>'
+        ? '<div class="shows">' + s.site.films.map(f => { const d = f.duration || S.settings.durations[titleKey(f.title)]; return '<b>' + esc(f.title) + '</b>' + (d ? ' (' + d + ' min)' : '') + ': ' + esc(f.times.join(' · ')); }).join('<br>') + '</div>'
         : '<div class="shows msg warn">Nessuno spettacolo trovato sul sito per questo giorno: inserisci tu inizio e fine.</div>';
     }
     const need = (s.calc && s.calc.missingTitle)
@@ -1334,11 +1343,32 @@ function renderImp() {
   box.innerHTML = h;
 }
 
+/* il sito a volte elenca lo stesso film in due blocchi: li unisco (orari uniti e ordinati) */
+function mergeFilms(site) {
+  if (!site || !site.films) return site;
+  const by = {}, out = [];
+  site.films.forEach(f => {
+    const k = titleKey(f.title);
+    if (!by[k]) { by[k] = { title: f.title, times: [], duration: f.duration || null }; out.push(by[k]); }
+    f.times.forEach(x => { if (by[k].times.indexOf(x) < 0) by[k].times.push(x); });
+    if (!by[k].duration && f.duration) by[k].duration = f.duration;
+  });
+  out.forEach(f => f.times.sort());
+  return Object.assign({}, site, { films: out });
+}
+function calcText(s, r) {
+  const parts = [];
+  if (r.start != null && r.firstShow && /AP/.test(s.mode)) parts.push('apertura: primo spettacolo ' + r.firstShow + ' − ' + S.settings.apMin + ' min');
+  if (r.end != null && r.endTitle) parts.push('chiusura: ' + r.endTitle + ' ' + r.endShowStart + ' + ' + r.endDur + ' min = ' + r.endBase + ', più ' + S.settings.chMin + ' min = ' + r.end);
+  else if (r.end != null && /DI/.test(s.mode)) parts.push('fino all’intervallo: ultimo film ' + r.lastShow + ' + metà durata, più ' + S.settings.diMin + ' min');
+  return parts.join(' · ');
+}
 function applyCompute(s) {
   if (!s.site || s.site.ok === false || s.rest || s.mode === 'MANUAL' || s.mode === 'FIXED') return;
   const calcMode = s.mode === 'APFIX' ? 'AP' : (s.mode === 'FIXCH' ? 'CH' : (s.mode === 'FIXDI' ? 'DI' : s.mode));
   const r = computeShift(calcMode, s.site.films, S.settings.durations, { ap: S.settings.apMin, ch: S.settings.chMin, di: S.settings.diMin });
   s.calc = r;
+  s.calcTxt = r.noShows ? '' : calcText(s, r);
   if (r.noShows) return;
   if (s.mode !== 'FIXCH' && r.start != null) s.start = r.start;
   if (s.mode === 'FIXCH' && s.fixStart) s.start = s.fixStart;
@@ -1379,7 +1409,7 @@ $('impBody').addEventListener('click', async ev => {
           try { cache[key] = await fetchShowtimes(s.cinema, s.date); }
           catch (e) { cache[key] = { ok: false, error: e.message }; }
         }
-        s.site = cache[key];
+        s.site = mergeFilms(cache[key]);
         if (s.site.sample) lastSample = s.site.sample;
         applyCompute(s);
       }
@@ -1399,7 +1429,8 @@ $('impBody').addEventListener('click', async ev => {
       add.push({
         id: uid(), date: s.date, cinema: s.cinema, rest: false, role: cap(s.role), start: s.start || '', end: s.end || '',
         pausa: s.pausa || '', extra: s.extra || '', note: s.mode === 'MANUAL' ? 'Dal piano: ' + [s.rawCell.orario, s.rawCell.attivita, s.rawCell.orario2].filter(Boolean).join(' / ') : '',
-        shows: s.site && s.site.ok !== false && s.site.films.length ? s.site.films.map(f => f.title + ' ' + f.times.join(' ')).join(' | ') : '',
+        shows: s.site && s.site.ok !== false && s.site.films.length ? s.site.films.map(f => { const d = f.duration || S.settings.durations[titleKey(f.title)]; return f.title + (d ? ' (' + d + ' min)' : '') + ' ' + f.times.join(' '); }).join(' | ') : '',
+        calcTxt: s.calcTxt || '',
         source: 'pdf'
       });
     });
@@ -1458,11 +1489,25 @@ $('restoreFile').addEventListener('change', async ev => {
 });
 
 /* ---------- dati e impostazioni ---------- */
+function renderDurList() {
+  const d = S.settings.durations || {}, keys = Object.keys(d);
+  $('durList').innerHTML = keys.length ? keys.sort().map(k => '<div class="durrow"><span>' + esc(k) + '</span><input type="number" inputmode="numeric" min="30" max="300" value="' + d[k] + '" data-dk="' + esc(k) + '"><button class="ghost" data-dd="' + esc(k) + '">Elimina</button></div>').join('') : '<div class="mut" style="margin-top:6px">Nessuna durata salvata a mano.</div>';
+}
+$('durList').addEventListener('change', async ev => {
+  const k = ev.target.getAttribute('data-dk'); if (k == null) return;
+  const v = parseInt(ev.target.value, 10);
+  if (v >= 30 && v <= 300) { S.settings.durations[k] = v; await metaSet('settings', S.settings); toast('Durata aggiornata'); }
+});
+$('durList').addEventListener('click', async ev => {
+  const k = ev.target.getAttribute('data-dd'); if (k == null) return;
+  delete S.settings.durations[k]; await metaSet('settings', S.settings); renderDurList(); toast('Durata eliminata');
+});
 async function renderData() {
   const lb = S.lastBackup ? new Date(S.lastBackup).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }) : 'mai';
   $('bkInfo').textContent = 'Ultima copia: ' + lb + '. Salva la copia dove vuoi: Drive, WhatsApp, email o file.';
   $('setAp').value = S.settings.apMin; $('setCh').value = S.settings.chMin;
   $('setDi').value = S.settings.diMin == null ? 15 : S.settings.diMin; $('setSub').value = S.settings.subPause ? '1' : '0'; $('setAuto').value = S.settings.autoBk === false ? '0' : '1'; $('setHold').value = String(S.settings.holdMs || 1000); $('setMiss').value = S.settings.missDot === false ? '0' : '1';
+  renderDurList();
   $('setBridge').value = S.settings.bridgeUrl || ''; $('setKey').value = S.settings.bridgeKey || '';
   let pers = 'non verificato';
   try { if (navigator.storage && navigator.storage.persisted) pers = (await navigator.storage.persisted()) ? 'sì' : 'no (Chrome può liberare lo spazio se il telefono è pieno)'; } catch (e) {}
