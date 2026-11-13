@@ -15,6 +15,8 @@
   body { font:16px/1.4 system-ui, -apple-system, Roboto, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); padding-bottom:calc(70px + env(safe-area-inset-bottom)); }
   body.noscroll { overflow:hidden; }
   button { font:inherit; border:0; border-radius:12px; padding:12px 16px; background:var(--acc); color:#fff; width:100%; margin-top:10px; cursor:pointer; }
+  button.upd { background:#cfd5e2; color:#1f2430; }
+  .saveHint { color:var(--mut); font-size:13px; margin:12px 0 -2px; }
   button.ghost { background:#eef0f4; color:var(--ink); }
   button.danger { color:var(--err); }
   button:disabled { opacity:.5; }
@@ -91,14 +93,45 @@
   .sh.rest { border-left-color:#c9ced8; color:var(--mut); }
   .sh .big { font-size:20px; font-weight:600; margin-top:2px; }
   .sh .shows { font-size:13px; color:var(--mut); margin-top:4px; }
+  .sh .rw { display:grid; grid-template-columns:70px minmax(0,1fr); gap:8px; padding:8px 0; border-top:1px solid var(--line); font-size:15px; margin-top:0; }
+  .sh .rw:first-of-type { margin-top:6px; }
+  .sh .rk { color:var(--mut); } .sh .fl { font-size:15px; margin-top:2px; } .sh .fd { color:var(--mut); font-size:13px; }
+  .sh .pill { display:inline-block; background:#f1f3f7; border:1px solid var(--line); border-radius:6px; padding:1px 8px; margin:3px 5px 4px 0; font-size:14px; }
   .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .btns button { margin-top:8px; padding:9px; }
 
   /* importa */
-  .ic { border:1px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
+  .ic { border-top:1px solid var(--line); padding:0; margin:0; }
+  .ic:first-of-type { border-top:0; }
+  .ich { display:flex; align-items:center; gap:10px; }
+  .ich input[type=checkbox] { width:22px; height:22px; flex:none; margin:0; }
+  button.tog { display:flex; align-items:center; gap:10px; width:auto; flex:1 1 auto; min-width:0; margin:0; padding:11px 0; background:transparent; color:var(--ink); text-align:left; border-radius:0; }
+  .icd { width:62px; flex:none; font-size:14px; }
+  .icdot { width:10px; height:10px; border-radius:50%; flex:none; }
+  .icm { flex:1 1 auto; min-width:0; display:block; }
+  .ict { display:block; font-size:17px; font-weight:600; }
+  .ics { display:block; font-size:12px; color:var(--mut); overflow-wrap:anywhere; }
+  .chv { color:var(--mut); flex:none; font-size:15px; }
+  .icb { background:#f5f6f9; border-radius:10px; padding:10px; margin:0 0 10px; }
   .ic.off { opacity:.55; }
   .row { display:flex; gap:8px; align-items:center; } .row input[type=checkbox] { width:22px; height:22px; }
   .sub { color:var(--mut); font-size:14px; margin:2px 0 8px 30px; }
   .shows { font-size:14px; margin-top:8px; }
+  .filebtn { display:block; background:var(--acc); color:#fff; border-radius:12px; padding:12px 16px; text-align:center; cursor:pointer; }
+  .sec { margin:20px 4px 6px; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); }
+  .card.lst { padding:2px 14px 4px; }
+  .set { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-top:1px solid var(--line); margin:0; }
+  .card.lst > .set:first-child { border-top:0; }
+  .set .t { flex:1 1 auto; min-width:0; font-size:15px; color:var(--ink); }
+  .set .t small { display:block; color:var(--mut); font-size:12.5px; line-height:1.3; margin-top:1px; }
+  .set input[type=number] { width:84px; flex:none; margin:0; text-align:right; }
+  .set select { width:172px; flex:none; margin:0; }
+  .set .v { flex:none; color:var(--mut); font-size:15px; text-align:right; max-width:50%; }
+  .set.col { flex-direction:column; align-items:stretch; gap:6px; }
+  .set.col input { width:100%; text-align:left; margin:0; }
+  details.set summary { color:var(--mut); font-size:15px; cursor:pointer; }
+  details.set pre { white-space:pre-wrap; font-size:11px; margin:8px 0 0; max-height:240px; overflow:auto; }
+  .btnrow { display:flex; gap:8px; padding:4px 0 10px; } .btnrow button { margin:0; flex:1; }
+  #tab-dat .card .durrow:first-child { margin-top:4px; }
   .durrow { display:flex; gap:8px; align-items:center; margin-top:8px; }
   .durrow span { flex:1 1 auto; font-size:14px; min-width:0; overflow-wrap:anywhere; }
   .durrow input { width:74px; margin:0; } .durrow button { width:auto; margin:0; padding:0 12px; height:40px; }
@@ -144,59 +177,65 @@
   </div>
 </section>
 
-<!-- ===== IMPORTA ===== -->
-<section id="tab-imp" class="wrap" hidden>
+<!-- ===== DATI ===== -->
+<section id="tab-dat" class="wrap" hidden>
+  <div class="sec" style="margin-top:8px">Importa turni</div>
   <div class="card">
-    <h2>Importa il PDF dei turni</h2>
-    <input type="file" id="pdf" accept="application/pdf,.pdf" style="width:100%">
+    <label class="filebtn" for="pdf">Scegli il PDF dei turni</label>
+    <input type="file" id="pdf" accept="application/pdf,.pdf" hidden>
     <div id="impMsg" class="msg"></div>
   </div>
   <div id="impBody"></div>
-</section>
 
-<!-- ===== DATI ===== -->
-<section id="tab-dat" class="wrap" hidden>
-  <div class="card">
-    <h2>Copia di sicurezza</h2>
-    <div class="mut" id="bkInfo"></div>
-    <button id="btnBackup">Salva copia</button>
-    <button id="btnRestore" class="ghost">Ripristina da un file</button>
+  <div class="sec">Copia di sicurezza</div>
+  <div class="card lst">
+    <div class="set"><div class="t">Ultima copia<small>Salvala dove vuoi: Drive, WhatsApp, email o file</small></div><div class="v" id="bkInfo"></div></div>
+    <div class="btnrow"><button id="btnBackup">Salva copia</button><button id="btnRestore" class="ghost">Ripristina</button></div>
     <input type="file" id="restoreFile" accept=".json,application/json,text/plain" hidden>
     <div id="bkMsg" class="msg"></div>
   </div>
-  <div class="card">
-    <h2>Impostazioni</h2>
-    <div class="grid2">
-      <label class="f">Minuti prima del primo spettacolo<input type="number" id="setAp" inputmode="numeric" min="0" max="240"></label>
-      <label class="f">Minuti dopo l'ultimo spettacolo<input type="number" id="setCh" inputmode="numeric" min="0" max="240"></label>
-    </div>
-    <div class="grid2" style="margin-top:10px">
-      <label class="f">Minuti dopo metà dell'ultimo film («fino all'intervallo»)<input type="number" id="setDi" inputmode="numeric" min="0" max="120"></label>
-      <label class="f">Puntino sui turni non timbrati<select id="setMiss"><option value="1">Mostra</option><option value="0">Nascondi</option></select></label>
-      <label class="f">Copia dopo ogni PDF<select id="setAuto"><option value="1">Proponila subito</option><option value="0">Non proporla</option></select></label>
-      <label class="f">Tempo di pressione per timbrare<select id="setHold"><option value="500">0,5 secondi</option><option value="1000">1 secondo</option><option value="1500">1,5 secondi</option><option value="2000">2 secondi</option><option value="3000">3 secondi</option></select></label>
-      <label class="f">Riepilogo ore<select id="setSub"><option value="0">Pause comprese</option><option value="1">Pause tolte</option></select></label>
-    </div>
-    <label class="f" style="margin-top:10px">Indirizzo del ponte per leggere il sito (facoltativo)<input type="url" id="setBridge" placeholder="https://script.google.com/macros/s/…/exec"></label>
-    <label class="f" style="margin-top:10px">Chiave del ponte (se l'hai impostata)<input type="text" id="setKey" autocomplete="off"></label>
-    <button id="btnSettings">Salva impostazioni</button>
-    <div id="setMsg" class="msg"></div>
+
+  <div class="sec">Calcolo degli orari</div>
+  <div class="card lst">
+    <label class="set"><div class="t">Apertura<small>minuti prima del primo spettacolo</small></div><input type="number" id="setAp" inputmode="numeric" min="0" max="240"></label>
+    <label class="set"><div class="t">Chiusura<small>minuti dopo l'ultimo spettacolo</small></div><input type="number" id="setCh" inputmode="numeric" min="0" max="240"></label>
+    <label class="set"><div class="t">Fino all'intervallo<small>minuti dopo metà dell'ultimo film</small></div><input type="number" id="setDi" inputmode="numeric" min="0" max="120"></label>
+    <label class="set"><div class="t">Riepilogo ore</div><select id="setSub"><option value="0">Pause comprese</option><option value="1">Pause tolte</option></select></label>
   </div>
+
+  <div class="sec">Badge e avvisi</div>
+  <div class="card lst">
+    <label class="set"><div class="t">Tempo di pressione<small>per timbrare</small></div><select id="setHold"><option value="500">0,5 secondi</option><option value="1000">1 secondo</option><option value="1500">1,5 secondi</option><option value="2000">2 secondi</option><option value="3000">3 secondi</option></select></label>
+    <label class="set"><div class="t">Puntino sui turni<small>non timbrati</small></div><select id="setMiss"><option value="1">Mostra</option><option value="0">Nascondi</option></select></label>
+  </div>
+
+  <div class="sec">Importazione e sito</div>
+  <div class="card lst">
+    <label class="set"><div class="t">Copia dopo ogni PDF</div><select id="setAuto"><option value="1">Proponila</option><option value="0">Non proporla</option></select></label>
+    <label class="set col"><div class="t">Indirizzo del ponte<small>per leggere il sito (facoltativo)</small></div><input type="url" id="setBridge" placeholder="https://script.google.com/macros/s/…/exec"></label>
+    <label class="set col"><div class="t">Chiave del ponte<small>solo se l'hai impostata</small></div><input type="text" id="setKey" autocomplete="off"></label>
+  </div>
+  <button id="btnSettings">Salva impostazioni</button>
+  <div id="setMsg" class="msg"></div>
+
+  <div class="sec">Durate dei film salvate a mano</div>
   <div class="card">
-    <h2>Stato</h2>
-    <div class="mut" id="stState"></div>
-    <h2 style="margin-top:16px">Durate dei film salvate a mano</h2>
-    <div class="mut">Servono solo quando il sito non indica la durata. Se il sito la indica, vale quella del sito.</div>
+    <div class="mut">Servono solo quando il sito non indica la durata. Se il sito la indica, vale quella del sito. Quelle non usate da 30 giorni si tolgono da sole.</div>
     <div id="durList"></div>
-    <details style="margin-top:8px"><summary class="mut">Diagnostica</summary><pre id="debug">(niente ancora)</pre></details>
-    <button id="btnWipe" class="ghost danger">Cancella tutti i dati</button>
   </div>
+
+  <div class="sec">Archivio</div>
+  <div class="card lst">
+    <div class="set"><div class="t">Turni salvati</div><div class="v" id="stCount"></div></div>
+    <div class="set"><div class="t">Archivio protetto<small>se «no», Chrome può liberare lo spazio a telefono pieno</small></div><div class="v" id="stPers"></div></div>
+    <details class="set col"><summary>Diagnostica</summary><pre id="debug">(niente ancora)</pre></details>
+  </div>
+  <button id="btnWipe" class="ghost danger">Cancella tutti i dati</button>
 </section>
 
 <div id="badgeCard" class="dock" hidden></div>
 <nav id="nav">
   <button id="nav-cal" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendario</button>
-  <button id="nav-imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0l-4-4m4 4l4-4M4 19h16"/></svg>Importa</button>
   <button id="nav-dat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>Dati</button>
 </nav>
 
@@ -741,7 +780,7 @@ const MODE_LABEL = { APCH: 'Apertura–Chiusura', APFIX: 'Apertura → ora fissa
 
 const S = {
   shifts: [],
-  settings: { apMin: 45, chMin: 15, diMin: 15, subPause: false, autoBk: true, holdMs: 1000, bridgeUrl: '', bridgeKey: '', durations: {} },
+  settings: { apMin: 45, chMin: 15, diMin: 15, subPause: false, autoBk: true, holdMs: 1000, bridgeUrl: '', bridgeKey: '', durations: {}, durSeen: {} },
   month: null, tab: 'cal', lastChange: null, lastBackup: null
 };
 let IMP = null;
@@ -826,7 +865,7 @@ const isDirty = () => S.shifts.length > 0 && S.lastChange && (!S.lastBackup || S
 function setTab(t) {
   S.tab = t;
   holdStop();
-  ['cal', 'imp', 'dat'].forEach(k => { $('tab-' + k).hidden = k !== t; $('nav-' + k).classList.toggle('on', k === t); });
+  ['cal', 'dat'].forEach(k => { $('tab-' + k).hidden = k !== t; $('nav-' + k).classList.toggle('on', k === t); });
   if (t === 'cal') renderCal(); else renderBadgeCard();
   if (t === 'dat') renderData();
   window.scrollTo(0, 0);
@@ -1135,6 +1174,21 @@ async function stamp(id, kind, note) {
   return rec;
 }
 
+function showsHtml(str) {
+  return String(str).split(' | ').map(p => {
+    const m = /^(.*?)(?: \((\d+) min\))? ((?:\d{1,2}:\d{2}(?: |$))+)$/.exec(p.trim());
+    if (!m) return '<div class="fl">' + esc(p) + '</div>';
+    return '<div class="fl">' + esc(m[1]) + (m[2] ? ' <span class="fd">' + m[2] + ' min</span>' : '') + '</div><div>' +
+      m[3].trim().split(' ').map(x => '<span class="pill">' + esc(x) + '</span>').join('') + '</div>';
+  }).join('');
+}
+function sheetRows(s) {
+  const r = (k, v) => '<div class="rw"><span class="rk">' + k + '</span><span class="rv">' + v + '</span></div>';
+  return (s.pausa ? r('Pausa', esc(s.pausa) + ' min') : '') +
+    (s.extra ? r('Extra', esc(s.extra)) : '') +
+    (s.note ? r('Nota', esc(s.note)) : '') +
+    (s.shows ? r('Film', showsHtml(s.shows)) : '');
+}
 function openDay(di) {
   const list = S.shifts.filter(s => s.date === di).sort(byStart);
   let h = '<h3>' + esc(dateLong(di)) + '</h3>';
@@ -1149,11 +1203,7 @@ function openDay(di) {
       '<div class="big">' + (s.start && s.end ? esc(s.start) + ' – ' + esc(s.end) : 'Orario da inserire') + '</div>' +
       (d != null ? '<div class="mut">' + fmtDur(d) + '</div>' : '') +
       badgeHtml(s) +
-      (s.pausa ? '<div class="mut">Pausa ' + esc(s.pausa) + ' min</div>' : '') +
-      (s.extra ? '<div class="mut">' + esc(s.extra) + '</div>' : '') +
-      (s.note ? '<div>' + esc(s.note) + '</div>' : '') +
-      (s.shows ? '<div class="shows">Spettacoli: ' + esc(s.shows) + '</div>' : '') +
-      (s.calcTxt ? '<div class="shows">Calcolo — ' + esc(s.calcTxt) + '</div>' : '') +
+      sheetRows(s) +
       '<div class="btns"><button class="ghost" data-act="edit" data-id="' + s.id + '">Modifica</button><button class="ghost danger" data-act="del" data-id="' + s.id + '">Elimina</button></div></div>';
   });
   h += '<button data-act="add" data-date="' + di + '">+ Aggiungi turno</button><button class="ghost" data-act="close">Chiudi</button>';
@@ -1312,12 +1362,25 @@ function impSubtitle(s) {
   return bits.join(' · ');
 }
 
+let impOpen = {};
+function impSub(s) {
+  const bits = [];
+  if (s.mode === 'MANUAL') bits.push('orario a mano');
+  else bits.push(MODE_LABEL[s.mode] || '');
+  if (s.role && !/^sala$/i.test(s.role)) bits.push(cap(s.role));
+  if (s.pausa) bits.push('pausa ' + s.pausa + ' min');
+  if (s.extra) bits.push(s.extra);
+  if (s.mode === 'MANUAL') bits.push('nel PDF: ' + [s.rawCell.orario, s.rawCell.attivita, s.rawCell.orario2].filter(Boolean).join(' / '));
+  if (s.date < todayIso()) bits.push('già passato');
+  return bits.filter(Boolean).join(' · ');
+}
 function renderImp() {
   const box = $('impBody');
   if (!IMP) { box.innerHTML = ''; return; }
   let h = '<div class="card"><h2>Turni letti</h2>';
+  const rests = [];
   IMP.shifts.forEach(s => {
-    if (s.rest) { h += '<div class="restline">' + esc(dateShort(s.date)) + ' · Riposo</div>'; return; }
+    if (s.rest) { rests.push(dateShort(s.date).replace(/ [a-zà-ù]+$/i, '')); return; }
     let shows = '';
     if (s.site && s.site.ok === false) shows = '<div class="shows msg err">' + esc(s.site.error) + '</div>';
     else if (s.site) {
@@ -1327,19 +1390,27 @@ function renderImp() {
     }
     const need = (s.calc && s.calc.missingTitle)
       ? '<div class="need">Quanto dura «' + esc(s.calc.missingTitle) + '»? (minuti) <input type="number" inputmode="numeric" min="30" max="300" data-i="' + s.id + '" data-f="dur" placeholder="es. 110"></div>' : '';
+    const incomplete = (s.start && !s.end) || (!s.start && s.end) || (!s.start && !s.end);
+    const open = !!(impOpen[s.id] || need || incomplete || (s.site && s.site.ok === false));
     const endNext = s.start && s.end && hmToMin(s.end) <= hmToMin(s.start) ? ' (giorno dopo)' : '';
+    const dd = dateShort(s.date).split(' ');
     h += '<div class="ic' + (s.include ? '' : ' off') + '">' +
-      '<label class="row"><input type="checkbox" data-i="' + s.id + '" data-f="include"' + (s.include ? ' checked' : '') + '><b>' + esc(dateShort(s.date)) + ' · ' + esc(CINEMA[s.cinema].nome) + '</b></label>' +
-      '<div class="sub">' + esc(impSubtitle(s)) + '</div>' +
-      '<div class="grid2">' +
+      '<div class="ich"><input type="checkbox" data-i="' + s.id + '" data-f="include"' + (s.include ? ' checked' : '') + '>' +
+      '<button class="tog" data-tog="' + s.id + '"><span class="icd">' + esc(dd[0] + ' ' + dd[1]) + '</span><i class="icdot" style="background:' + CINEMA[s.cinema].col + '"></i>' +
+      '<span class="icm"><span class="ict">' + (s.start && s.end ? esc(s.start) + ' – ' + esc(s.end) : '<span class="mut">Orario da completare</span>') + '</span><span class="ics">' + esc(impSub(s)) + '</span></span>' +
+      '<span class="chv">' + (open ? '▴' : '▾') + '</span></button></div>' +
+      (open ? '<div class="icb"><div class="grid2">' +
       '<label class="f">Cinema<select data-i="' + s.id + '" data-f="cinema">' + optionList(CINEMA, s.cinema) + '</select></label>' +
       '<label class="f">Tipo di turno<select data-i="' + s.id + '" data-f="mode">' + optionList(MODE_LABEL, s.mode) + '</select></label>' +
       '<label class="f">Inizio<input type="time" data-i="' + s.id + '" data-f="start" value="' + esc(s.start) + '"></label>' +
       '<label class="f">Fine' + endNext + '<input type="time" data-i="' + s.id + '" data-f="end" value="' + esc(s.end) + '"></label>' +
-      '</div>' + shows + need + '</div>';
+      '</div>' + shows + need + '</div>' : '') + '</div>';
   });
-  h += '<button id="btnCalc">Leggi gli orari dal sito e calcola</button><div id="calcMsg" class="msg"></div>';
-  h += '<button id="btnSaveImp" class="ghost">Salva nel gestionale</button></div>';
+  if (rests.length) h += '<div class="restline">Riposo: ' + esc(rests.join(', ')) + '</div>';
+  const nSave = IMP.shifts.filter(s => !s.rest && s.include && !((s.start && !s.end) || (!s.start && s.end))).length;
+  const ico = d => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="' + d + '"/></svg>';
+  h += '<button id="btnCalc" class="upd">' + ico('M20 11A8 8 0 0 0 5.5 7M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4') + 'Aggiorna orari dal sito</button><div id="calcMsg" class="msg"></div>';
+  h += '<button id="btnSaveImp">' + ico('M5 12l5 5L20 7') + 'Salva ' + nSave + (nSave === 1 ? ' turno' : ' turni') + ' nel gestionale</button></div>';
   box.innerHTML = h;
 }
 
@@ -1368,6 +1439,7 @@ function applyCompute(s) {
   const calcMode = s.mode === 'APFIX' ? 'AP' : (s.mode === 'FIXCH' ? 'CH' : (s.mode === 'FIXDI' ? 'DI' : s.mode));
   const r = computeShift(calcMode, s.site.films, S.settings.durations, { ap: S.settings.apMin, ch: S.settings.chMin, di: S.settings.diMin });
   s.calc = r;
+  (s.site.films || []).forEach(f => { const k = titleKey(f.title); if (!f.duration && S.settings.durations[k]) S.settings.durSeen[k] = Date.now(); });
   s.calcTxt = r.noShows ? '' : calcText(s, r);
   if (r.noShows) return;
   if (s.mode !== 'FIXCH' && r.start != null) s.start = r.start;
@@ -1387,7 +1459,7 @@ $('impBody').addEventListener('change', async ev => {
   if (f === 'dur') {
     const v = parseInt(t.value, 10);
     if (!(v >= 30 && v <= 300) || !s.calc) return;
-    S.settings.durations[titleKey(s.calc.missingTitle)] = v;
+    S.settings.durations[titleKey(s.calc.missingTitle)] = v; S.settings.durSeen[titleKey(s.calc.missingTitle)] = Date.now();
     await metaSet('settings', S.settings);
     IMP.shifts.forEach(applyCompute);
     renderImp();
@@ -1395,6 +1467,7 @@ $('impBody').addEventListener('change', async ev => {
 });
 
 $('impBody').addEventListener('click', async ev => {
+  const tg = ev.target.closest('[data-tog]'); if (tg) { impOpen[tg.dataset.tog] = !impOpen[tg.dataset.tog]; renderImp(); return; }
   if (ev.target.id === 'btnCalc') {
     const btn = ev.target; btn.disabled = true;
     try {
@@ -1414,11 +1487,12 @@ $('impBody').addEventListener('click', async ev => {
         applyCompute(s);
       }
       renderImp();
-      say('calcMsg', 'Fatto. Controlla gli orari e, se serve, correggili a mano.', 'ok');
+      say('calcMsg', ''); $('impBody').dataset.calcDone = String((+$('impBody').dataset.calcDone || 0) + 1);
     } catch (e) { say('calcMsg', 'Errore: ' + e.message, 'err'); }
     finally { btn.disabled = false; }
   }
   if (ev.target.id === 'btnSaveImp') {
+    await metaSet('settings', S.settings);
     const dates = Array.from(new Set(IMP.shifts.map(s => s.date)));
     const dels = S.shifts.filter(x => x.source === 'pdf' && dates.indexOf(x.date) >= 0).map(x => x.id);
     const add = [];
@@ -1478,7 +1552,7 @@ $('restoreFile').addEventListener('change', async ev => {
     const rows = data.shifts.filter(x => x && x.id && x.date).map(x => Object.assign({}, x));
     if (choice === 'replace') await commit(rows, [], true); else await commit(rows, []);
     if (data.settings && typeof data.settings === 'object') {
-      S.settings = Object.assign({}, S.settings, data.settings, { durations: Object.assign({}, S.settings.durations, data.settings.durations || {}) });
+      S.settings = Object.assign({}, S.settings, data.settings, { durations: Object.assign({}, S.settings.durations, data.settings.durations || {}), durSeen: Object.assign({}, data.settings.durSeen || {}, S.settings.durSeen) });
       await metaSet('settings', S.settings);
     }
     S.lastBackup = S.lastChange; await metaSet('lastBackup', S.lastBackup);
@@ -1496,22 +1570,32 @@ function renderDurList() {
 $('durList').addEventListener('change', async ev => {
   const k = ev.target.getAttribute('data-dk'); if (k == null) return;
   const v = parseInt(ev.target.value, 10);
-  if (v >= 30 && v <= 300) { S.settings.durations[k] = v; await metaSet('settings', S.settings); toast('Durata aggiornata'); }
+  if (v >= 30 && v <= 300) { S.settings.durations[k] = v; S.settings.durSeen[k] = Date.now(); await metaSet('settings', S.settings); toast('Durata aggiornata'); }
 });
 $('durList').addEventListener('click', async ev => {
   const k = ev.target.getAttribute('data-dd'); if (k == null) return;
-  delete S.settings.durations[k]; await metaSet('settings', S.settings); renderDurList(); toast('Durata eliminata');
+  delete S.settings.durations[k]; delete S.settings.durSeen[k]; await metaSet('settings', S.settings); renderDurList(); toast('Durata eliminata');
 });
+const DUR_KEEP_MS = 30 * 86400000;
+async function pruneDurations() {
+  const d = S.settings.durations, seen = S.settings.durSeen, now = Date.now(); let ch = false;
+  Object.keys(d).forEach(k => {
+    if (!seen[k]) { seen[k] = now; ch = true; }
+    else if (now - seen[k] > DUR_KEEP_MS) { delete d[k]; delete seen[k]; ch = true; }
+  });
+  Object.keys(seen).forEach(k => { if (!(k in d)) { delete seen[k]; ch = true; } });
+  if (ch) await metaSet('settings', S.settings);
+}
 async function renderData() {
   const lb = S.lastBackup ? new Date(S.lastBackup).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }) : 'mai';
-  $('bkInfo').textContent = 'Ultima copia: ' + lb + '. Salva la copia dove vuoi: Drive, WhatsApp, email o file.';
+  $('bkInfo').textContent = lb;
   $('setAp').value = S.settings.apMin; $('setCh').value = S.settings.chMin;
   $('setDi').value = S.settings.diMin == null ? 15 : S.settings.diMin; $('setSub').value = S.settings.subPause ? '1' : '0'; $('setAuto').value = S.settings.autoBk === false ? '0' : '1'; $('setHold').value = String(S.settings.holdMs || 1000); $('setMiss').value = S.settings.missDot === false ? '0' : '1';
   renderDurList();
   $('setBridge').value = S.settings.bridgeUrl || ''; $('setKey').value = S.settings.bridgeKey || '';
   let pers = 'non verificato';
   try { if (navigator.storage && navigator.storage.persisted) pers = (await navigator.storage.persisted()) ? 'sì' : 'no (Chrome può liberare lo spazio se il telefono è pieno)'; } catch (e) {}
-  $('stState').textContent = 'Elementi salvati su questo telefono: ' + S.shifts.length + '. Archivio protetto: ' + pers + '.';
+  $('stCount').textContent = S.shifts.length; $('stPers').textContent = pers.replace(/ \(.*/, '');
   $('debug').textContent = (lastParseDebug || '(nessun PDF letto in questa sessione)') + (lastSample ? '\n\n--- ultimo testo letto dal sito ---\n' + lastSample : '');
 }
 $('btnSettings').addEventListener('click', async () => {
@@ -1532,13 +1616,13 @@ $('btnWipe').addEventListener('click', async () => {
   if (ok) { await commit([], [], true); renderCal(); renderData(); toast('Dati cancellati'); }
 });
 
-for (const k of ['cal', 'imp', 'dat']) $('nav-' + k).addEventListener('click', () => setTab(k));
+for (const k of ['cal', 'dat']) $('nav-' + k).addEventListener('click', () => setTab(k));
 
 /* ---------- PDF ricevuto da "Condividi" ---------- */
 async function takeSharedPdf() {
   if (!/[?&]shared=1/.test(location.search)) return;
   history.replaceState(null, '', location.pathname);
-  setTab('imp');
+  setTab('dat');
   try {
     const c = await caches.open('turni-share');
     const r = await c.match('shared-pdf');
@@ -1552,10 +1636,11 @@ async function takeSharedPdf() {
 
 /* ---------- avvio ---------- */
 (async function init() {
-  try { await openDb(); } catch (e) { $('fatal').hidden = false; ['tab-cal', 'tab-imp', 'tab-dat'].forEach(i => { $(i).hidden = true; }); return; }
+  try { await openDb(); } catch (e) { $('fatal').hidden = false; ['tab-cal', 'tab-dat'].forEach(i => { $(i).hidden = true; }); return; }
   S.shifts = await dbAll();
   const st = await metaGet('settings', null);
-  if (st) S.settings = Object.assign(S.settings, st, { durations: Object.assign({}, st.durations || {}) });
+  if (st) S.settings = Object.assign(S.settings, st, { durations: Object.assign({}, st.durations || {}), durSeen: Object.assign({}, st.durSeen || {}) });
+  await pruneDurations();
   S.lastChange = await metaGet('lastChange', null);
   S.lastBackup = await metaGet('lastBackup', null);
   const t = new Date(); S.month = { y: t.getFullYear(), m: t.getMonth() };
